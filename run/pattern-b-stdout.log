@@ -1,0 +1,22 @@
+[msg] type=system
+[msg] type=rate_limit_event
+[msg] type=system
+[msg] type=system
+[msg] type=assistant
+[msg] type=assistant
+  tool_use: ToolSearch {"query":"select:mcp__mcpverify__slow_echo","max_results":5}
+[msg] type=user
+[msg] type=assistant
+  tool_use: mcp__mcpverify__slow_echo {"text":"hello-pattern-b","delay_seconds":20}
+  >>> tool_use detected for slow_echo at t=1788271757906, calling query.interrupt() now
+  >>> invoking query.interrupt() at t=1788271759412
+  >>> interrupt() resolved: {"still_queued":[]}
+[msg] type=user
+[msg] type=user
+[msg] type=result subtype=error_during_execution
+main() error: Error: Claude Code returned an error result: [ede_diagnostic] result_type=user last_content_type=n/a stop_reason=tool_use
+    at hy.readMessages (/home/akring/gekko_0/tsclient/node_modules/@anthropic-ai/claude-agent-sdk/sdk.mjs:99:26056)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+  telemetryMessage: 'Claude Code returned an error result',
+  errorClass: 'error_result'
+}

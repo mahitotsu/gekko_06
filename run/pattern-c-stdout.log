@@ -1,0 +1,30 @@
+[msg] type=system
+[msg] type=rate_limit_event
+[msg] type=system
+[msg] type=system
+[msg] type=system
+[msg] type=assistant
+[msg] type=assistant
+  tool_use: Agent {"description":"Echo hello-pattern-c","prompt":"mcp__mcpverify__echo ツールを呼び出し、text='hello-pattern-c' としてechoしてください。結果をそのまま報告してください。","subagent_type":"echoer","run_in_background":false}
+[msg] type=system
+[msg] type=user
+[msg] type=system
+[msg] type=assistant
+  tool_use: mcp__mcpverify__echo {"text":"hello-pattern-c"}
+[msg] type=user
+  tool_result: "{\"result\":\"echo: hello-pattern-c\"}"
+  >>> subagent task appears to have completed at t=1788271842646
+[msg] type=system
+[msg] type=system
+[msg] type=user
+  tool_result: [{"type":"text","text":"mcp__mcpverify__echo ツールを呼び出しました。結果は以下の通りです。\n\n`echo: hello-pattern-c`"},{"type":"text","text":"agentId: a0e1bac539fd1f3ed (use SendMessage with to: 'a0e1bac539fd1f3ed', summa
+  >>> subagent task appears to have completed at t=1788271844130
+[msg] type=assistant
+  assistant text: サブエージェント 'echoer' が `mcp__mcpverify__echo` を呼び出し、`text='hello-pattern-c'` のechoを実行しました。
+
+結果: `echo: hello-pattern-c`
+
+(この後、指示通り追加のツール呼び出しは行わず、これで完了とします)
+[msg] type=result subtype=success
+=== for-await loop finished normally ===
+=== main() resolved, script about to exit naturally ===
