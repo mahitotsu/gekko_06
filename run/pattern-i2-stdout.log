@@ -1,0 +1,7 @@
+main Node.js process pid = 146370
+[msg] type=system t=1788274271035
+[msg] type=rate_limit_event t=1788274271337
+[msg] type=assistant t=1788274272951
+[msg] type=user t=1788274272958
+=== query() threw (expected once CLI is killed) at t=1788274273992: Error: Claude Code process terminated by signal SIGKILL ===
+=== main() resolved at t=1788274273992 ===

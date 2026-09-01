@@ -1,0 +1,11 @@
+main Node.js process pid = 140571
+[msg] type=rate_limit_event
+[msg] type=system
+[msg] type=assistant
+[msg] type=user
+[msg] type=assistant
+[msg] type=user
+[msg] type=assistant
+[msg] type=result subtype=success
+=== for-await loop finished at t=1788273440759 ===
+=== main() resolved at t=1788273440759 ===
