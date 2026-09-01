@@ -1,0 +1,16 @@
+main Node.js process pid = 138606
+  [query#1] tool_use: ToolSearch {"query":"select:mcp__mcpverify__echo","max_results":5}
+  [query#1] tool_use: mcp__mcpverify__echo {"text":"first-query"}
+[query#1] query() finished. server pid=138684
+[query#1] immediately after: pid=138684 alive=false
+[query#1] +2s later: pid=138684 alive=false
+=== メインNodeプロセスは終了させず、続けて2回目のquery()を開始します ===
+  [query#2] tool_use: ToolSearch {"query":"select:mcp__mcpverify__echo","max_results":5}
+  [query#2] tool_use: mcp__mcpverify__echo {"text":"second-query"}
+[query#2] query() finished. server pid=138797
+[query#2] immediately after: pid=138797 alive=false
+[query#2] +2s later: pid=138797 alive=false
+=== 結果 ===
+pid1=138684, pid2=138797, same_pid=false
+→ 異なるプロセスが起動された(query()=セッション単位でMCPサーバーが立ち上げ直されている)
+=== main() resolved, script about to exit naturally ===

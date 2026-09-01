@@ -74,7 +74,65 @@ SDKがMCPサーバーのstdio接続を閉じ、子プロセスを終了させて
 ```
 → MCPサーバーはセッション単位で1プロセスのみ起動され、サブエージェント専用の別プロセスにはならない。
 サブエージェントのタスクが完了してもMCPサーバーは終了せず、**トップレベルの`query()`セッション自体が
-終了するタイミング**まで生き続ける。
+終了するタイミング**まで生き続ける。これはパターンDの結果(MCPサーバーは`query()`=セッション単位に
+紐づき、それより粒度の細かい単位(サブエージェント)にも粗い単位(メインNode.jsプロセス)にも紐づかない)
+と整合する。
+
+## パターンD: メインNode.jsプロセスは終了させず、`query()`を2回連続実行
+
+「セッション(query()呼び出し)に紐づくのか、メインプロセスに紐づくのか」を切り分けるため、
+[tsclient/pattern-d.ts](tsclient/pattern-d.ts) で同一Node.jsプロセス内で `query()` を2回連続実行し、
+1回目のMCPサーバーPIDと2回目のMCPサーバーPIDを比較した。メインNode.jsプロセス自体は一度も終了させていない。
+
+```
+main Node.js process pid = 138606
+[query#1] query() finished. server pid=138684
+[query#1] immediately after: pid=138684 alive=false
+=== メインNodeプロセスは終了させず、続けて2回目のquery()を開始します ===
+[query#2] query() finished. server pid=138797
+[query#2] immediately after: pid=138797 alive=false
+pid1=138684, pid2=138797, same_pid=false
+→ 異なるプロセスが起動された(query()=セッション単位でMCPサーバーが立ち上げ直されている)
+```
+
+**結果**: メインNode.jsプロセス(pid=138606)は2回のquery()の間ずっと生存し続けたにもかかわらず、
+1回目と2回目で**別のPID**のMCPサーバープロセスが起動された。これにより、MCPサーバープロセスの
+ライフサイクルは「メインNode.jsプロセスの生存期間」ではなく「個々の`query()`呼び出し
+(= CLIプロセス1回分の起動、実質的にMCPの1セッション)」に紐づいていることが実測で確認できた。
+
+## MCP仕様における正しい挙動(公式仕様の確認)
+
+[MCP公式仕様(2025-06-18) Lifecycle章](https://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle#shutdown)
+には、stdio transportのシャットダウン手順が明記されている:
+
+> For the stdio transport, the client SHOULD initiate shutdown by:
+> 1. First, closing the input stream to the child process (the server)
+> 2. Waiting for the server to exit, or sending `SIGTERM` if the server does not exit within a reasonable time
+> 3. Sending `SIGKILL` if the server does not exit within a reasonable time after `SIGTERM`
+
+つまり仕様が推奨するのは「**stdinクローズ → 様子見 → SIGTERM → 様子見 → SIGKILL**」という段階的な
+エスカレーションである。しかし本検証の実測(A/B/Cすべて)では、`SIGINT`と`SIGTERM`が1ミリ秒未満の差で
+ほぼ同時に送られており、stdinクローズを起点とした「様子見」の段階は観測されなかった。これは
+**Claude Code CLIのMCPクライアント実装が、仕様が推奨する段階的シャットダウンではなく、即座の
+シグナル送信で終了させている**ことを示す(未定義動作というわけではないが、仕様の"SHOULD"からは外れる)。
+
+また[同仕様 Transports章 Session Management節](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#session-management)
+によれば、"session"(セッション)は「`initialize`から始まる、論理的に関連したクライアント-サーバー間の
+やり取り」と定義されるが、その対応関係はtransportによって異なる:
+
+- **stdio**: セッションIDという概念自体が存在しない。クライアントがサブプロセスを起動し、そのプロセスの
+  標準入出力を使って1対1で通信する構造上、**「1回のサブプロセス起動 = 1セッション」が構造的に固定**される。
+  プロセスがステートを保持するなら、それは必然的にそのセッション1つ分のスコープにしかならない
+  (プロセスを跨いだ状態共有はtransport上不可能)。
+- **Streamable HTTP**: `Mcp-Session-Id` ヘッダで明示的にセッションを識別する。**1つの長命なサーバー
+  プロセスが複数のクライアントセッションを同時に処理できる**設計になっており、セッションとプロセスは
+  分離されている。サーバー実装は、セッションIDごとに状態を分離して保持する責任を負う。
+
+**この検証(stdio + `uv run`)への示唆**: 今回のようにstdio transportでMCPサーバーを起動する構成では、
+仕様の設計上「1 `query()` = 1 MCPサーバープロセス = 1セッション」が正しい(というより必然の)挙動であり、
+Pattern Dの実測結果はこれと整合する。もし複数の`query()`呼び出しをまたいでMCPサーバー側の状態を
+保持したい場合、stdio transportではなくStreamable HTTP transportで長命なサーバープロセスを立て、
+セッションID単位で状態を管理する設計にする必要がある。
 
 ## 結論
 
@@ -113,6 +171,20 @@ SDKがMCPサーバーのstdio接続を閉じ、子プロセスを終了させて
 ```
 パターンB・Cもシグナルの種類・到達順(SIGINT→SIGTERM、ほぼ同時)は同一だった。
 
-**未確認事項**: この`SIGINT`/`SIGTERM`が子プロセス単体への`kill()`なのか、プロセスグループ全体への
-送信なのかは切り分けていない。また、SDKが内蔵する`sdk.mjs`(バンドル・難読化済み)のソースレベルでの
-該当処理箇所までは追っていない。あくまで「サーバー側から見て何が届いたか」の実測に基づく報告である。
+**追記(プロセスツリー調査により一部確認できた)**: [pattern-tree.ts](tsclient/pattern-tree.ts) で
+`slow_echo`(15秒sleep)を使いMCPサーバーを稼働させたまま `ps --forest` で観察したところ、実際の
+プロセス親子関係は次の通りだった(cmdlineも実測):
+
+```
+claude (CLI本体, 実体は node_modules/@anthropic-ai/claude-agent-sdk-linux-x64/claude という
+        プラットフォーム別の単一実行バイナリ。sdk.mjsはこれをspawnする側のJSライブラリ)
+  └─ uv run --directory .../pyserver main.py
+       └─ python3 main.py   (= mcpverifyサーバー本体。uvはexecで自身を置き換えていない)
+```
+
+このとき検証スクリプト自身(Node/tsx側の祖先プロセス群)はSIGTERMの影響を一切受けず動作を継続していた
+ことから、**プロセスグループ全体への一斉kill ( `kill(-pgid)` ) ではなく、`claude`が直接の子である`uv`を
+狙って終了させ、`uv`がそれを子の`python3`へ中継(フォワード)している**、という説明が最も整合的である。
+ただし、これは状況証拠からの推論であり、`claude`バイナリ本体は214MBのコンパイル済み単一実行ファイルで
+現実的に逆解析できなかったため、`kill()`が具体的にどのAPI・引数で呼ばれているかのソースレベルでの
+確認はできていない(未確認のまま報告する)。
