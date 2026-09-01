@@ -435,6 +435,35 @@
   .callout p:last-child { margin-bottom: 0; }
   .callout .h { font-weight: 600; margin-bottom: 4px; display:block; }
 
+  /* ---------- glossary ---------- */
+  .glossary {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .gterm {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 18px;
+    background: var(--surface);
+    padding: 13px 18px;
+  }
+  @media (max-width: 560px) { .gterm { grid-template-columns: 1fr; gap: 4px; } }
+  .gterm dt {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .gterm dd { margin: 0; font-size: 14.5px; color: var(--ink-soft); line-height: 1.6; }
+  .gterm dd b { color: var(--ink); font-weight: 600; }
+
   footer {
     padding: 40px 0 90px;
     color: var(--ink-faint);
@@ -492,6 +521,44 @@
       </div>
     </div>
   </section>
+</div>
+
+<div class="prose">
+  <section>
+    <h2>前提知識:誰が何を呼んでいるのか</h2>
+    <p>この先「CLI」「セッション」といった言葉が説明なしに出てくる。まずClaude Agent SDKが裏で何をしているかを押さえておく。</p>
+    <p><code>query()</code>を呼んでも、自分のNode.jsコードが全部やっているわけではない。SDKは裏で<b>別プロセスとして<code>claude</code>コマンド本体を起動</b>し、標準入出力でJSONメッセージをやり取りする薄いラッパーにすぎない。今回のようにMCPサーバーをstdioで繋ぐと、プロセスはさらにもう二段深くなる。</p>
+  </section>
+</div>
+
+<div class="wide">
+  <div class="tree">
+    <div class="node">① <span class="proc">あなたのNode.jsスクリプト</span> <span class="desc">— 自分で書いたコード。query()を呼ぶだけの薄いラッパー</span></div>
+    <div class="node">  └─ ② <span class="hi">claude CLIプロセス</span> <span class="desc">— SDKが裏で起動する claude コマンド本体。以後「CLI」と呼ぶ</span></div>
+    <div class="node">       └─ ③ <span class="proc">uv run main.py</span> <span class="desc">— CLIがMCPサーバーを起動するために使うランチャー</span></div>
+    <div class="node">            └─ ④ <span class="proc">python3 main.py</span> <span class="desc">— MCPサーバー本体(今回検証した対象)</span></div>
+  </div>
+  <p style="font-size:14px; color:var(--ink-soft); margin-top:10px;">API通信・ツールの実行判断・MCPサーバーとの接続管理をしているのは、実は①ではなく<b>②のCLI</b>だ。①が消えても②は自動的には消えない——これが後半の「親が死んだら」の章の伏線になる。</p>
+</div>
+
+<div class="prose">
+  <section>
+    <h3>この記事で使う言葉</h3>
+  </section>
+</div>
+
+<div class="wide">
+  <dl class="glossary">
+    <div class="gterm"><dt>query()</dt><dd>SDKが提供する関数。プロンプトを渡すとメッセージのストリームが返る。<b>呼ぶたびに新しいCLIプロセスが1つ起動される</b>。</dd></div>
+    <div class="gterm"><dt>セッション</dt><dd>1回の<code>query()</code>呼び出しに対応する、CLI⇔MCPサーバー間の一連のやり取り。stdio transportでは「1セッション = 1プロセス」が仕様上の必然(後述)。</dd></div>
+    <div class="gterm"><dt>CLI</dt><dd>SDKが裏で起動する<code>claude</code>コマンド本体(上図②)。ターミナルで直接打つ<code>claude</code>コマンドと同じ実行ファイル。</dd></div>
+    <div class="gterm"><dt>stdio transport</dt><dd>MCPサーバーとの通信方式の一つ。クライアント(CLI)がサーバーをサブプロセスとして起動し、標準入出力でJSON-RPCをやり取りする。</dd></div>
+    <div class="gterm"><dt>MCPサーバー</dt><dd>ツールを提供する外部プロセス(上図④)。今回はPythonの最小FastMCPサーバーを<code>uv run</code>で起動した。</dd></div>
+    <div class="gterm"><dt>サブエージェント</dt><dd>同じセッション内で、別のシステムプロンプト・ツールセットを持つ「子」のやり取り。Taskツール経由で呼ばれるが、<b>別プロセスにはならない</b>。</dd></div>
+    <div class="gterm"><dt>SIGINT/SIGTERM</dt><dd>プロセスへ送る終了シグナル。プロセス側でハンドラを登録して捕捉・無視できる。</dd></div>
+    <div class="gterm"><dt>SIGKILL</dt><dd>強制終了シグナル。<b>カーネルレベルで強制され、プロセス側は捕捉も無視もできない</b>唯一の手段。</dd></div>
+    <div class="gterm"><dt>孤児プロセス</dt><dd>親プロセスが死んだ後も生き残った子プロセス。init(PID 1)の下に付け替えられ、誰も後始末しなければ動き続ける。</dd></div>
+  </dl>
 </div>
 
 <div class="prose">
