@@ -1,5 +1,10 @@
 # Claude Agent SDK (TypeScript) — stdio MCPサーバー(`uv run`)の子プロセス終了検証
 
+> このMarkdown版は生ログ中心の作業記録です。読み物としてまとめた最終版は
+> [report.html](report.html)(ブログ形式、11パターン全ての実測データ・タイムライン図・
+> MCP仕様/公式ドキュメントとの比較付き)を参照してください。
+> ローカルで開くか、公開版は https://claude.ai/code/artifact/255316b1-e8b1-4c7f-a2e5-9502016c303c 。
+
 ## 検証環境
 
 | 項目 | バージョン |

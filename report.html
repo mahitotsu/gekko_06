@@ -1,0 +1,988 @@
+<title>stdio MCPサーバーの寿命</title>
+<style>
+  :root {
+    --bg: #F4F6F4;
+    --surface: #FFFFFF;
+    --surface-2: #EAEEEB;
+    --border: #D8DED9;
+    --ink: #1B211E;
+    --ink-soft: #57625C;
+    --ink-faint: #8A948E;
+    --accent: #0E7C86;
+    --accent-ink: #FFFFFF;
+    --accent-soft: #E0F0F0;
+    --alive: #2E8B57;
+    --alive-soft: #E3F3EA;
+    --dead: #C0392B;
+    --dead-soft: #FBE7E4;
+    --signal: #9C6B00;
+    --signal-soft: #FBF0D9;
+    --code-bg: #1B211E;
+    --code-ink: #DCEFE2;
+    --code-ink-soft: #93A69B;
+    --code-accent: #F2C14E;
+    --code-red: #E38073;
+    --shadow: 0 1px 2px rgba(20, 30, 25, 0.06), 0 8px 24px -12px rgba(20, 30, 25, 0.18);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101513;
+      --surface: #171D1A;
+      --surface-2: #1E2622;
+      --border: #2B3630;
+      --ink: #E8EDE9;
+      --ink-soft: #A9B5AE;
+      --ink-faint: #74807A;
+      --accent: #52C7D2;
+      --accent-ink: #08211F;
+      --accent-soft: #143432;
+      --alive: #59C08A;
+      --alive-soft: #163429;
+      --dead: #E58177;
+      --dead-soft: #3A211E;
+      --signal: #E7BE5E;
+      --signal-soft: #362A11;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #101513;
+    --surface: #171D1A;
+    --surface-2: #1E2622;
+    --border: #2B3630;
+    --ink: #E8EDE9;
+    --ink-soft: #A9B5AE;
+    --ink-faint: #74807A;
+    --accent: #52C7D2;
+    --accent-ink: #08211F;
+    --accent-soft: #143432;
+    --alive: #59C08A;
+    --alive-soft: #163429;
+    --dead: #E58177;
+    --dead-soft: #3A211E;
+    --signal: #E7BE5E;
+    --signal-soft: #362A11;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", system-ui, sans-serif;
+    font-size: 16.5px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3 {
+    font-family: "Fraunces", "Noto Serif JP", Georgia, serif;
+    text-wrap: balance;
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .prose { max-width: 700px; margin: 0 auto; padding: 0 24px; }
+  .wide { max-width: 940px; margin: 0 auto; padding: 0 24px; }
+
+  a { color: var(--accent); }
+
+  code, .mono {
+    font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  p code, li code {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.05em 0.4em;
+    font-size: 0.88em;
+  }
+
+  /* ---------- Header ---------- */
+  header.hero {
+    padding: 76px 0 40px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 48px;
+  }
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12.5px;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+    margin: 0 0 18px;
+  }
+  h1.title {
+    font-size: clamp(32px, 5vw, 46px);
+    line-height: 1.15;
+    margin: 0 0 18px;
+    letter-spacing: -0.01em;
+  }
+  .dek {
+    font-size: 19px;
+    color: var(--ink-soft);
+    max-width: 60ch;
+    margin: 0 0 28px;
+  }
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12.5px;
+  }
+  .chip {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--ink-soft);
+    border-radius: 999px;
+    padding: 5px 12px;
+    white-space: nowrap;
+  }
+  .chip b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- Sections ---------- */
+  section { margin-bottom: 56px; }
+  h2 {
+    font-size: 26px;
+    margin: 0 0 20px;
+    padding-top: 8px;
+  }
+  h3 {
+    font-size: 19px;
+    margin: 32px 0 12px;
+    color: var(--ink);
+  }
+  p { margin: 0 0 18px; color: var(--ink); }
+  .lede { font-size: 18px; color: var(--ink-soft); }
+  ul, ol { margin: 0 0 18px; padding-left: 1.3em; }
+  li { margin-bottom: 8px; }
+  strong { color: var(--ink); }
+
+  hr.div {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 56px 0;
+  }
+
+  /* ---------- TL;DR panel ---------- */
+  .tldr {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px 32px;
+    box-shadow: var(--shadow);
+  }
+  .tldr h2 { margin-top: 0; font-size: 21px; }
+  .tldr-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-top: 18px;
+  }
+  .tldr-card {
+    background: var(--surface-2);
+    border-radius: 10px;
+    padding: 16px 18px;
+    border: 1px solid var(--border);
+  }
+  .tldr-card .k {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .tldr-card .v {
+    font-size: 14.5px;
+    color: var(--ink);
+    line-height: 1.5;
+  }
+  .tldr-card .v .num {
+    font-family: "IBM Plex Mono", monospace;
+    font-weight: 600;
+    color: var(--dead);
+  }
+
+  /* ---------- Tables ---------- */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; min-width: 560px; background: var(--surface); }
+  th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 14.5px; vertical-align: top; }
+  thead th {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    background: var(--surface-2);
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td.num, th.num { font-family: "IBM Plex Mono", monospace; }
+
+  /* ---------- Pattern card ---------- */
+  .pattern {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px 30px 30px;
+    box-shadow: var(--shadow);
+    margin-bottom: 28px;
+  }
+  .pattern-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; flex-wrap: wrap; }
+  .pattern-letter {
+    font-family: "Fraunces", serif;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .pattern-name { font-size: 19px; font-weight: 600; }
+  .pattern-sub { color: var(--ink-soft); font-size: 14.5px; margin-bottom: 18px; }
+  .verdict {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin-bottom: 18px;
+  }
+  .verdict.dead { background: var(--dead-soft); color: var(--dead); }
+  .verdict.mixed { background: var(--signal-soft); color: var(--signal); }
+  .verdict::before { content: "●"; font-size: 8px; }
+
+  /* ---------- timeline ---------- */
+  .timeline {
+    position: relative;
+    margin: 22px 0 8px;
+    padding-top: 6px;
+  }
+  .timeline .track {
+    position: relative;
+    height: 4px;
+    background: var(--surface-2);
+    border-radius: 4px;
+    margin: 34px 0;
+  }
+  .timeline .seg {
+    position: absolute;
+    top: 0; height: 4px;
+    border-radius: 4px;
+    background: var(--dead);
+    opacity: 0.35;
+  }
+  .timeline .point {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 3px solid var(--ink-faint);
+  }
+  .timeline .point.signal { border-color: var(--signal); }
+  .timeline .point.dead { border-color: var(--dead); background: var(--dead); }
+  .timeline .label {
+    position: absolute;
+    top: -28px;
+    transform: translateX(-50%);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  .timeline .label b { color: var(--ink); }
+  .timeline .duration {
+    position: absolute;
+    bottom: -26px;
+    transform: translateX(-50%);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    color: var(--dead);
+    white-space: nowrap;
+  }
+
+  /* ---------- log / console block ---------- */
+  .console {
+    background: var(--code-bg);
+    color: var(--code-ink);
+    border-radius: 10px;
+    padding: 18px 20px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12.8px;
+    line-height: 1.7;
+    overflow-x: auto;
+    box-shadow: var(--shadow);
+  }
+  .console .dim { color: var(--code-ink-soft); }
+  .console .sig { color: var(--code-accent); font-weight: 600; }
+  .console .bad { color: var(--code-red); }
+  .console .tag { color: #7FB8C4; }
+
+  /* ---------- process tree ---------- */
+  .tree {
+    background: var(--code-bg);
+    color: var(--code-ink);
+    border-radius: 10px;
+    padding: 22px 24px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13.5px;
+    line-height: 2.1;
+    box-shadow: var(--shadow);
+  }
+  .tree .node { white-space: pre; }
+  .tree .proc { color: #fff; font-weight: 600; }
+  .tree .desc { color: var(--code-ink-soft); font-size: 12px; }
+  .tree .hi { color: var(--code-accent); font-weight: 600; }
+
+  /* ---------- pid boxes (pattern D) ---------- */
+  .pidwrap {
+    border: 2px dashed var(--border);
+    border-radius: 14px;
+    padding: 22px;
+    margin: 22px 0;
+  }
+  .pidwrap .main-pid {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-bottom: 16px;
+  }
+  .pidwrap .main-pid b { color: var(--accent); }
+  .pid-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 560px) { .pid-cols { grid-template-columns: 1fr; } }
+  .pid-box {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .pid-box .q { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-faint); font-family: "IBM Plex Mono", monospace; margin-bottom: 8px;}
+  .pid-box .pid { font-family: "IBM Plex Mono", monospace; font-size: 20px; font-weight: 600; color: var(--dead); }
+  .pid-box .status { font-size: 12.5px; color: var(--ink-soft); margin-top: 4px; }
+
+  /* ---------- spec compare ---------- */
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  @media (max-width: 620px) { .compare { grid-template-columns: 1fr; } }
+  .compare .col { background: var(--surface); padding: 22px 24px; }
+  .compare .col h4 {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 0 0 14px;
+    color: var(--ink-faint);
+  }
+  .compare .col.spec h4 { color: var(--accent); }
+  .compare .col.real h4 { color: var(--dead); }
+  .compare ol { padding-left: 1.1em; margin: 0; }
+  .compare li { font-size: 14.5px; margin-bottom: 10px; color: var(--ink); }
+
+  /* ---------- doc checklist ---------- */
+  .doclist { display: flex; flex-direction: column; gap: 10px; }
+  .docrow {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    gap: 14px;
+    align-items: start;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .docrow .ico {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 14px; font-weight: 700;
+  }
+  .docrow.yes .ico { background: var(--alive-soft); color: var(--alive); }
+  .docrow.no .ico { background: var(--dead-soft); color: var(--dead); }
+  .docrow .txt { font-size: 14.5px; }
+  .docrow .txt .src { display:block; font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--ink-faint); margin-top: 4px; }
+  .docrow .pill { font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap; align-self: center; }
+  .docrow.yes .pill { background: var(--alive-soft); color: var(--alive); }
+  .docrow.no .pill { background: var(--dead-soft); color: var(--dead); }
+
+  /* ---------- callout ---------- */
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    border-radius: 0 10px 10px 0;
+    padding: 16px 20px;
+    margin: 22px 0;
+    font-size: 15px;
+  }
+  .callout.warn { border-color: var(--signal); background: var(--signal-soft); }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout .h { font-weight: 600; margin-bottom: 4px; display:block; }
+
+  footer {
+    padding: 40px 0 90px;
+    color: var(--ink-faint);
+    font-size: 13px;
+    border-top: 1px solid var(--border);
+    margin-top: 20px;
+  }
+  footer .mono { font-family: "IBM Plex Mono", monospace; }
+
+  ::selection { background: var(--accent-soft); color: var(--ink); }
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<header class="hero">
+  <div class="prose">
+    <p class="eyebrow">検証レポート — Claude Agent SDK (TypeScript)</p>
+    <h1 class="title">stdio MCPサーバーの寿命</h1>
+    <p class="dek"><code>uv run</code> で起動したMCPサーバーの子プロセスを、Claude Agent SDKはいつ・どうやって終了させるのか。11パターンの実験とプロセスツリー観察、そしてMCP仕様・公式ドキュメントとの突き合わせで確かめた記録。</p>
+    <div class="meta-row">
+      <span class="chip">検証日 <b>2026-09-01〜02</b></span>
+      <span class="chip">@anthropic-ai/claude-agent-sdk <b>0.3.252</b></span>
+      <span class="chip">同梱CLI <b>2.1.252</b></span>
+      <span class="chip">mcp (Python) <b>1.29.1</b></span>
+      <span class="chip">uv <b>0.9.18</b></span>
+    </div>
+  </div>
+</header>
+
+<div class="prose">
+  <section>
+    <p class="lede">MCPサーバーをstdio(標準入出力)でつなぐと、クライアント側がサブプロセスとして起動する。ではセッションが終わったあと、その子プロセスは誰が、どう片付けるのか。放置してゾンビ化しないのか、行儀の悪いサーバーだったら、親プロセス自体が突然死んだら——公式ドキュメントには書かれていないこの領域を、11パターンの実験とプロセスツリー観察で確かめた。</p>
+  </section>
+</div>
+
+<div class="wide">
+  <section class="tldr">
+    <h2>先に結論</h2>
+    <div class="tldr-grid">
+      <div class="tldr-card">
+        <div class="k">正常系(A〜G)</div>
+        <div class="v">正常終了・中断・サブエージェント・逐次/並列セッション、すべて<span class="num">1〜2秒</span>で子プロセスは自動的に消える。後始末コードは不要。</div>
+      </div>
+      <div class="tldr-card">
+        <div class="k">行儀の悪いサーバー(E, F)</div>
+        <div class="v">シグナルを無視しても<span class="num">stdin EOF</span>で自然終了。それも無視する最強に強情な相手には、約<span class="num">5.8秒後</span>にSIGKILL。</div>
+      </div>
+      <div class="tldr-card">
+        <div class="k">CLIプロセスを直接kill(H, I)</div>
+        <div class="v"><code>uv</code>自体が独立した安全装置になっていて、約<span class="num">1秒</span>で子(MCPサーバー)を道連れに自滅する。</div>
+      </div>
+      <div class="tldr-card">
+        <div class="k">Node.jsホスト自体がクラッシュ(J, K)</div>
+        <div class="v">この安全装置は働かない。CLIプロセスは<span class="num">最大60秒</span>観察しても自己終了せず、確実に孤児として残る。<b>唯一の本物のリーク源</b>。</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="prose">
+  <section>
+    <h2>実験の骨組み</h2>
+    <p>最小のFastMCPサーバー(Python、<code>uv run</code>で起動)を1つ用意した。ツールは即応する<code>echo</code>と、指定秒数sleepしてから返す<code>slow_echo</code>の2つだけ。起動直後に自分のPIDをファイルへ書き出し、ログはすべてstderrに逃がしてJSON-RPCの邪魔をしないようにしている。</p>
+    <p>TypeScript側は<code>@anthropic-ai/claude-agent-sdk</code>の<code>query()</code>にこのサーバーを<code>mcpServers</code>として登録し、<code>allowedTools</code>で該当ツールだけを許可、<code>disallowedTools</code>でBashなど他の手段を封じて「MCP経由でしか目的を達成できない」状況を作った。プロセスの生死は外側から<code>kill -0</code>で0.2秒間隔にポーリングし、スクリプト終了後も30秒間追跡している。</p>
+  </section>
+</div>
+
+<hr class="div">
+
+<div class="wide">
+  <section>
+    <h2>Pattern A — for-awaitを最後まで回す</h2>
+
+    <div class="pattern">
+      <div class="pattern-head">
+        <span class="pattern-letter">A</span>
+        <span class="pattern-name">正常終了</span>
+      </div>
+      <p class="pattern-sub"><code>query()</code>のfor-awaitループを最後まで回し、普通に完了させる。後始末のコードは何も書かない。</p>
+      <span class="verdict dead">即座に終了・残存なし</span>
+
+      <div class="timeline">
+        <div class="track">
+          <div class="seg" style="left:0%; width:100%;"></div>
+          <div class="point signal" style="left:0%;">
+            <span class="label">SIGINT<br><span class="dim">→SIGTERM (+0.6ms)</span></span>
+          </div>
+          <div class="point dead" style="left:100%;">
+            <span class="label" style="left:auto; right:0; transform:translateX(0);">プロセス消滅<br><b>+0.70秒</b></span>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:14px; color:var(--ink-soft); margin-top:-6px;">別ラン(外部からのpsポーリング)では、for-awaitループが最終<code>result</code>を受け取るのと<b>ほぼ同時、むしろ0.53秒先行</b>して子プロセスの消滅を検知した。スクリプト自身の<code>main()</code>が完了するより前に、サーバーはもう死んでいる。</p>
+    </div>
+  </section>
+</div>
+
+<div class="wide">
+  <section>
+    <h2>Pattern B — ツール実行中に中断する</h2>
+    <div class="pattern">
+      <div class="pattern-head">
+        <span class="pattern-letter">B</span>
+        <span class="pattern-name">中断(interrupt)</span>
+      </div>
+      <p class="pattern-sub"><code>slow_echo</code>(20秒sleep)の実行中に<code>query.interrupt()</code>を呼び、強制的に打ち切る。</p>
+      <span class="verdict dead">即座に終了・残存なし</span>
+
+      <div class="timeline">
+        <div class="track">
+          <div class="seg" style="left:0%; width:100%;"></div>
+          <div class="point signal" style="left:0%;">
+            <span class="label">SIGINT<br><span class="dim">→SIGTERM (+0.2ms)</span></span>
+          </div>
+          <div class="point dead" style="left:100%;">
+            <span class="label" style="left:auto; right:0; transform:translateX(0);">プロセス消滅<br><b>+0.98秒</b></span>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:14px; color:var(--ink-soft); margin-top:-6px;">サーバー側のログでは <code>slow_echo still sleeping... 1/20s</code> が数回出たところで打ち切られていた。<code>interrupt()</code>呼び出しから外部psポーリングでの消滅検知までは<b>0.36秒</b>、そこからNodeスクリプト自身の終了までさらに<b>0.44秒</b>。</p>
+    </div>
+  </section>
+</div>
+
+<div class="wide">
+  <section>
+    <h2>Pattern C — サブエージェント経由で呼ぶ</h2>
+    <div class="pattern">
+      <div class="pattern-head">
+        <span class="pattern-letter">C</span>
+        <span class="pattern-name">サブエージェント</span>
+      </div>
+      <p class="pattern-sub">カスタムサブエージェント<code>echoer</code>を<code>agents</code>オプションで定義し、Taskツール経由で<code>mcp__mcpverify__echo</code>を呼ばせる。</p>
+      <span class="verdict mixed">サブエージェント完了では終了しない</span>
+
+      <div class="timeline">
+        <div class="track">
+          <div class="seg" style="left:0%; width:58%; opacity:0.15; background:var(--alive);"></div>
+          <div class="seg" style="left:58%; width:42%;"></div>
+          <div class="point" style="left:0%;">
+            <span class="label">サブエージェントの<br>tool_result受領</span>
+          </div>
+          <div class="point signal" style="left:58%;">
+            <span class="label">SIGINT/SIGTERM<br><span class="dim">(トップレベル完了)</span></span>
+            <span class="duration">+2.5秒後</span>
+          </div>
+          <div class="point dead" style="left:100%;">
+            <span class="label" style="left:auto; right:0; transform:translateX(0);">プロセス消滅<br><b>+0.69秒</b></span>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:14px; color:var(--ink-soft); margin-top:-6px;">サブエージェントがMCPツールの結果を受け取り、報告をまとめ終えたあとも、サーバーはおよそ<b>2.5秒</b>生き続けた。死ぬのはサブエージェントの完了ではなく、<b>トップレベルの<code>query()</code>セッションそのものが終わる瞬間</b>だった。</p>
+    </div>
+  </section>
+</div>
+
+<div class="prose">
+  <section>
+    <div class="callout">
+      <span class="h">共通パターン</span>
+      <p>A・B・Cいずれも、サーバーに直接シグナルハンドラを仕込んで実測すると、<b>SIGINTとSIGTERMが1ミリ秒未満の差でほぼ同時に</b>届いていた。<code>SIGKILL</code>は一度も観測されず、サーバー側は<code>SIGTERM</code>を受けた時点のPythonの後始末(anyio/FastMCPのタスクグループの終了処理など)だけでおよそ0.7〜1.0秒かけて自発的に終了している。</p>
+    </div>
+  </section>
+</div>
+
+<hr class="div">
+
+<div class="prose">
+  <section>
+    <h2>寄り道:「stdinクローズ」という推測は間違っていた</h2>
+    <p>最初のドラフトでは、終了メカニズムを「stdinクローズによるサーバー側の自発終了」だろうと<b>推測だけ</b>で書いていた。指摘を受けて確認すると、これは検証していない当てずっぽうだった。</p>
+    <p>そこでサーバー本体にシグナルハンドラと、SDK側からは見えない独立のログファイルを仕込み、実際に何が届いたのかを記録し直した。</p>
+  </section>
+</div>
+
+<div class="wide">
+  <div class="console">
+<span class="dim">$ cat run/server-shutdown-cause.log</span>
+2026-09-01T14:15:35.261305+00:00 pid=136409 <span class="tag">STARTED</span>
+2026-09-01T14:15:40.978714+00:00 pid=136409 <span class="sig">SIGNAL_RECEIVED signal=SIGINT(2)</span>
+2026-09-01T14:15:40.979282+00:00 pid=136409 <span class="sig">SIGNAL_RECEIVED signal=SIGTERM(15)</span>
+2026-09-01T14:15:41.680239+00:00 pid=136409 <span class="bad">SYSTEM_EXIT code=130</span>
+2026-09-01T14:15:41.680331+00:00 pid=136409 <span class="bad">PROCESS_EXITING</span>
+  </div>
+</div>
+
+<div class="prose">
+  <section>
+    <p style="margin-top:20px;">stdinのEOFによる自然な<code>return</code>(スモークテストで<code>&lt;/dev/null</code>を渡した時にだけ観測できた挙動)は、SDK経由の実行では<b>一度も</b>起きなかった。3パターンとも一貫して同じ結果——<code>SIGKILL</code>まで頼らずに済む、素早いシグナルによる強制終了だった。</p>
+  </section>
+</div>
+
+<hr class="div">
+
+<div class="prose">
+  <section>
+    <h2>誰が誰を殺しているのか — プロセスツリーを見る</h2>
+    <p>信号が届く経路を確かめるため、<code>slow_echo</code>で15秒間サーバーを稼働させたまま<code>ps --forest</code>で親子関係を観察した。</p>
+  </section>
+</div>
+
+<div class="wide">
+  <div class="tree">
+    <div class="node"><span class="proc">claude</span> <span class="desc">— CLI本体(実体は claude-agent-sdk-linux-x64/claude、214MBの単一実行バイナリ)</span></div>
+    <div class="node">  └─ <span class="proc">uv run --directory pyserver main.py</span> <span class="desc">— claudeの直接の子</span></div>
+    <div class="node">       └─ <span class="hi">python3 main.py</span> <span class="desc">— MCPサーバー本体。uvはexecで自身を置き換えていない</span></div>
+  </div>
+</div>
+
+<div class="prose">
+  <section>
+    <p style="margin-top: 20px;">重要なのは、このとき検証スクリプト自身(Node/tsxとその祖先プロセス群)は<b>同じプロセスグループに属していながら、シグナルの影響を一切受けず動き続けていた</b>ことだ。つまりプロセスグループ全体への一斉<code>kill(-pgid)</code>ではない。もっとも筋が通る説明は、<b><code>claude</code>が直接の子である<code>uv</code>だけを狙ってkillし、<code>uv</code>がそれを孫の<code>python3</code>へ中継(フォワード)している</b>、というものだ。</p>
+    <div class="callout warn">
+      <span class="h">ここは推論どまり</span>
+      <p><code>claude</code>バイナリは214MBのコンパイル済み単一実行ファイルで、現実的に逆解析できなかった。<code>kill()</code>が具体的にどのAPI・引数で呼ばれているかのソースレベルの確認はできていない。プロセスツリーという状況証拠からの推論として報告する。</p>
+    </div>
+  </section>
+</div>
+
+<hr class="div">
+
+<div class="prose">
+  <section>
+    <h2>Pattern D — メインプロセスを生かしたまま、2回query()する</h2>
+    <p>「MCPサーバーは<code>query()</code>単位(セッション)に紐づくのか、それともNode.jsのメインプロセスに紐づくのか」を切り分けるため、同一のメインプロセス内で<code>query()</code>を2回連続実行した。メインプロセス自体は一度も終了させていない。</p>
+  </section>
+</div>
+
+<div class="wide">
+  <div class="pidwrap">
+    <div class="main-pid">メインNode.jsプロセス <b>pid = 138606</b> — 2回のquery()の間、ずっと生存</div>
+    <div class="pid-cols">
+      <div class="pid-box">
+        <div class="q">query() 1回目</div>
+        <div class="pid">server pid 138684</div>
+        <div class="status">完了直後にはすでに死亡</div>
+      </div>
+      <div class="pid-box">
+        <div class="q">query() 2回目</div>
+        <div class="pid">server pid 138797</div>
+        <div class="status">1回目とは<b style="color:var(--dead)">別プロセス</b>として起動</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="prose">
+  <section>
+    <p>メインNode.jsプロセスは2回のquery()の間ずっと生き続けたにもかかわらず、MCPサーバーは1回目と2回目で別PIDになった。<b>MCPサーバーのライフサイクルは、メインプロセスの生存期間ではなく、個々の<code>query()</code>呼び出し(実質的にMCPの1セッション)に紐づく。</b></p>
+
+    <h3>Pattern G — 同時に2つ動かしたら?</h3>
+    <p>ついでに、同じメインプロセスから<code>query()</code>を<b>同時に(並列で)</b>2つ実行してみた。共有ロックのようなものは働くのか、それとも単純に2プロセス立つのか。</p>
+  </section>
+</div>
+
+<div class="wide">
+  <div class="pidwrap">
+    <div class="main-pid">メインNode.jsプロセス <b>pid = 142276</b> — 2つのセッションを同時発火</div>
+    <div class="pid-cols">
+      <div class="pid-box">
+        <div class="q">session-1 (slow_echo 8秒)</div>
+        <div class="pid">server pid 142402</div>
+        <div class="status">+2秒後も生存 → 独立して完了・終了</div>
+      </div>
+      <div class="pid-box">
+        <div class="q">session-2 (slow_echo 8秒)</div>
+        <div class="pid">server pid 142396</div>
+        <div class="status">+2秒後も生存 → 独立して完了・終了</div>
+      </div>
+    </div>
+  </div>
+  <p style="font-size:14px; color:var(--ink-soft); margin-top:8px;">2つのサーバーが<b>同時刻に</b>生存していることを確認した上で、それぞれ独立して(共有もロック待ちもなく)完了・終了した。並列実行しても振る舞いはPattern Dの延長線上——「1 <code>query()</code> = 1 MCPサーバープロセス」が並列度に関わらず保たれる。</p>
+</div>
+
+<hr class="div">
+
+<div class="prose">
+  <section>
+    <h2>もし行儀の悪いMCPサーバーだったら</h2>
+    <p>ここまでは全部、シグナルに素直に応答するサーバーだった。では<b>シグナルを無視する</b>サーバーだったらどうなるか。最終的には強制終了(<code>SIGKILL</code>)されるのか、それとも居座り続けるのか。</p>
+  </section>
+</div>
+
+<div class="wide">
+  <div class="pattern">
+    <div class="pattern-head">
+      <span class="pattern-letter">E</span>
+      <span class="pattern-name">シグナルだけ無視する</span>
+    </div>
+    <p class="pattern-sub"><code>SIGTERM</code>/<code>SIGINT</code>/<code>SIGHUP</code>すべてを握りつぶすハンドラを仕込んだサーバー。</p>
+    <span class="verdict dead">stdin EOFで自然終了(SIGKILL不要)</span>
+    <div class="console">
+<span class="dim">$ cat run/server-shutdown-cause.log</span>
+...STARTED
+...<span class="sig">SIGNAL_RECEIVED_BUT_IGNORED signal=SIGINT(2)</span>
+...<span class="sig">SIGNAL_RECEIVED_BUT_IGNORED signal=SIGTERM(15)</span>
+...<span class="tag">MCP_RUN_RETURNED_NATURALLY</span> <span class="dim">← 約0.3秒後、シグナルを無視したのに自然終了</span>
+    </div>
+    <p style="font-size:14px; color:var(--ink-soft); margin-top:14px; margin-bottom:0;">CLIはシグナル送信と<b>並行してstdinのクローズも行っている</b>らしく、MCP Python SDKの内部読み取りループがEOFを検知して自発的に抜けた。仕様どおりの経路がちゃんと機能していた。</p>
+  </div>
+
+  <div class="pattern">
+    <div class="pattern-head">
+      <span class="pattern-letter">F</span>
+      <span class="pattern-name">シグナル+stdin EOFの両方を無視する(最強に強情)</span>
+    </div>
+    <p class="pattern-sub">シグナルを無視するだけでなく、<code>mcp.run()</code>が自然リターンしても無限ループで再突入し続け、居座り続けようとするサーバー。</p>
+    <span class="verdict mixed">約5.8秒後にSIGKILLで強制終了</span>
+
+    <div class="timeline">
+      <div class="track">
+        <div class="seg" style="left:0%; width:100%;"></div>
+        <div class="point signal" style="left:0%;">
+          <span class="label">SIGINT/SIGTERM<br><span class="dim">(無視される)</span></span>
+        </div>
+        <div class="point" style="left:85%;">
+          <span class="label">最後のループログ<br><span class="dim">(loop=6)</span></span>
+        </div>
+        <div class="point dead" style="left:100%;">
+          <span class="label" style="left:auto; right:0; transform:translateX(0);">無音のまま消滅<br><b>+5.80秒</b></span>
+        </div>
+      </div>
+    </div>
+    <p style="font-size:14px; color:var(--ink-soft); margin-top:-6px;">サーバー自身のログは<code>EXCEPTION_SUPPRESSED type=ValueError</code>を1秒おきに6回記録したあと、<b>何の前触れもなく途切れた</b>。ログに何も残せないまま消える、というのが<code>SIGKILL</code>(捕捉不能)の状態証拠そのものだ。</p>
+  </div>
+
+  <div class="callout warn">
+    <span class="h">SIGKILLは実在した</span>
+    <p>CLIは、シグナルを無視するだけの相手にはstdin EOFという第二の手段で対応し、それすら無視する本当に強情な相手には、約<b>5.8秒</b>の猶予を与えたのち有無を言わさず<code>SIGKILL</code>していた。<code>SIGKILL</code>はカーネルレベルで強制されるシグナルで、ハンドラの登録・無視・ブロックが一切できない——プロセス側に打つ手はない。</p>
+  </div>
+</div>
+
+<hr class="div">
+
+<div class="prose">
+  <section>
+    <h2>親が死んだら、子はどうなるか</h2>
+    <p>ここまでの実験は全部、<b>親(CLI)が生きたまま自発的に子を後始末する</b>ケースだった。では親自体が——たとえばホストプロセスがクラッシュして——後始末する間もなく突然死んだらどうなるのか。これは読者からの指摘で気づいた、本質的に別の問いだった。</p>
+
+    <h3>CLIプロセスを直接killする(H, I)</h3>
+    <p>外部から<code>claude</code> CLIプロセスへ<code>kill -9</code>を撃ち込み、通常サーバー(H)と最強に強情なサーバー(I)それぞれの生死を追った。</p>
+  </section>
+</div>
+
+<div class="wide">
+  <div class="tree">
+    <div class="node"><span class="proc">claude</span> <span class="desc">← 外部から kill -9</span></div>
+    <div class="node">  └─ <span class="proc">uv run ...</span> <span class="hi">← 自分の入出力が壊れたのを検知し、子を道連れに自滅</span></div>
+    <div class="node">       └─ python3 main.py <span class="desc">(通常・最強に強情、どちらも同じ結果)</span></div>
+  </div>
+</div>
+
+<div class="prose">
+  <section>
+    <p style="margin-top:20px;">結果は両方とも<b>約1秒で終了</b>——通常サーバー(H)は1.0秒、最強に強情なサーバー(I)ですら1.1秒だった。シグナルを無視するIのケースでは、サーバー自身のログに<code>SIGNAL_RECEIVED</code>の記録が<b>一切ない</b>。それでも死んでいる。<code>uv</code>自身のPIDを追跡すると、<code>uv</code>と<code>python3</code>が<b>ほぼ同時(0.3秒以内)に消滅</b>していた。CLIが死ぬと、直接の子である<code>uv</code>が自分の入出力の破損を検知して、<b>子(MCPサーバー)を道連れに自滅している</b>——<code>uv run</code>自体が、CLIとは独立したもう一段の安全装置として機能していた。</p>
+
+    <h3>Node.jsホストプロセスそのものをkillする(J, K)</h3>
+    <p>今度はCLIの親、つまり<code>npx tsx ...</code>を実行しているNode.jsプロセス自体を外部から<code>kill -9</code>する。CLIより一段上を落とすだけなので、理屈上は同じ結果になりそうに思えたが——</p>
+  </section>
+</div>
+
+<div class="wide">
+  <div class="pidwrap">
+    <div class="main-pid">Node.jsホストプロセス — 外部から<code>kill -9</code>(この後は存在しない)</div>
+    <div class="pid-cols">
+      <div class="pid-box">
+        <div class="q">通常サーバー(J / J2)</div>
+        <div class="pid" style="color:var(--signal); font-size:16px;">CLI: 25〜30秒生存<br>server: 12〜30秒でまちまち</div>
+        <div class="status">タイミング次第で結果が変わる。保証された挙動ではない</div>
+      </div>
+      <div class="pid-box">
+        <div class="q">最強に強情なサーバー(K)</div>
+        <div class="pid" style="color:var(--dead); font-size:16px;">CLI: 60秒経過後も<b>生存</b><br>server: 51.8秒後に消滅</div>
+        <div class="status">CLIは観測終了まで自己終了せず、手動killが必要だった</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="prose">
+  <section>
+    <p>唯一一貫していたのは、<b><code>claude</code> CLIプロセス自体は、観測した範囲(最大60秒)では一度も自己終了しなかった</b>ということだ。MCPサーバー側は「CLIが自分の出力を書き込もうとして初めてパイプの破損に気づき、そのMCP接続だけ後始末する」というタイミング依存の経路で片付くことがある(J2では約12秒後、Kでは約51.8秒後)が、保証された挙動ではない——長時間ツールの実行中に親が死ねば(J)、その機会自体が来ないまま30秒経っても両方生き続けていた。</p>
+    <div class="callout warn">
+      <span class="h">CLIを直接killする(H/I)のとは別物だった</span>
+      <p><code>uv</code>という安全装置が効くのは、あくまで<b>CLIの直接の子</b>が異常を検知できる場合に限られる。Node.jsが死ぬと、CLIは(<code>uv</code>から見て)まだ生きている親であり続けるため、<code>uv</code>の安全装置は発動しない。CLI自身が気づくかどうかは、その瞬間に何をしていたか次第——これが今回見つかった<b>唯一の、確実なプロセスリーク経路</b>だった。</p>
+    </div>
+  </section>
+</div>
+
+<div class="wide">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>トリガー × サーバーの行儀</th><th>事前の期待</th><th>実測結果</th><th>判定</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">A〜G</td><td>CLIが生きたまま自発的に後始末(既出7パターン)</td><td>即座〜数秒で終了</td><td>全て期待通り</td><td>的中</td></tr>
+        <tr><td class="mono">E</td><td>正常完了 × シグナルだけ無視</td><td>SIGKILLされるはず</td><td>stdin EOFで自然終了(SIGKILL不要)</td><td>外れた(良い意味で)</td></tr>
+        <tr><td class="mono">F</td><td>正常完了 × シグナル+EOF両方無視</td><td>最終的に強制終了されるはず</td><td>約5.8秒後にSIGKILL</td><td>的中</td></tr>
+        <tr><td class="mono">H</td><td>CLI突然死 × 通常サーバー</td><td>パイプ破損でEOF検知、自発終了</td><td>約1.0秒で終了</td><td>的中</td></tr>
+        <tr><td class="mono">I</td><td>CLI突然死 × 最強に強情</td><td>後始末役が消え孤児化するはず</td><td>約1.1秒で終了(<code>uv</code>が道連れに自滅)</td><td>外れた(良い意味で)</td></tr>
+        <tr><td class="mono">J / J2</td><td>Node.js突然死 × 通常サーバー</td><td>CLIがNode死亡を検知し後始末</td><td>CLIは30秒/25秒生存。serverはタイミング次第(12秒後 or 生存)</td><td>外れた(悪い意味で)</td></tr>
+        <tr><td class="mono">K</td><td>Node.js突然死 × 最強に強情</td><td>J系の傾向を追認</td><td>serverは51.8秒後に終了、CLIは60秒生存</td><td>J系の傾向を裏付け</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<hr class="div">
+
+<div class="prose">
+  <section>
+    <h2>MCP公式仕様と比べるとどうか</h2>
+    <p><a href="https://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle#shutdown" target="_blank" rel="noopener">MCP公式仕様(2025-06-18)のLifecycle章</a>には、stdio transportのシャットダウン手順が明記されている。</p>
+  </section>
+</div>
+
+<div class="wide">
+  <div class="compare">
+    <div class="col spec">
+      <h4>仕様が推奨する手順(SHOULD)</h4>
+      <ol>
+        <li>まずサーバーへの<b>stdinを閉じる</b></li>
+        <li>サーバーの終了を<b>待つ</b>。合理的な時間内に終了しなければ<code>SIGTERM</code></li>
+        <li><code>SIGTERM</code>後も終了しなければ<code>SIGKILL</code></li>
+      </ol>
+    </div>
+    <div class="col real">
+      <h4>実測されたClaude Code CLIの挙動</h4>
+      <ol>
+        <li>stdinクローズは<b>観測されず</b></li>
+        <li><code>SIGINT</code>と<code>SIGTERM</code>を<b>ほぼ同時(&lt;1ms差)</b>に送信。「様子見」の間は無い</li>
+        <li><code>SIGKILL</code>は<b>一度も</b>必要にならなかった</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<div class="prose">
+  <section>
+    <p>仕様の"SHOULD"(推奨であって必須ではない)からは外れているが、<code>SIGTERM</code>だけで毎回きれいに終了できている以上、実害のあるずれではなさそうだ。段階を踏まず即座に信号を送ることで、むしろ子プロセスの後始末を速くしている面もある。</p>
+
+    <h3>セッションの単位はtransportで違う</h3>
+    <p>同じ仕様の<a href="https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#session-management" target="_blank" rel="noopener">Transports章 Session Management節</a>によれば、"session"の対応関係はtransportごとに設計が違う。</p>
+  </section>
+</div>
+
+<div class="wide">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Transport</th><th>セッションIDの概念</th><th>プロセスとセッションの関係</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="mono">stdio</td>
+          <td>存在しない</td>
+          <td>「1回のサブプロセス起動 = 1セッション」が構造的に固定。分離不可能</td>
+        </tr>
+        <tr>
+          <td class="mono">Streamable HTTP</td>
+          <td><code>Mcp-Session-Id</code>ヘッダで明示</td>
+          <td>1つの長命プロセスが複数セッションを同時に処理できる。状態はセッションIDごとに分離する設計</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="prose">
+  <section>
+    <p style="margin-top: 24px;">今回のようにstdioでMCPサーバーを立てる構成では、「1 <code>query()</code> = 1 MCPサーバープロセス = 1セッション」が<b>仕様上そもそも必然</b>であり、Pattern Dの実測結果はこれと矛盾なく整合する。複数の<code>query()</code>をまたいでサーバー側の状態を持たせたいなら、stdioではなくStreamable HTTPで長命サーバーを立て、セッションIDごとに状態を管理する設計に切り替える必要がある。</p>
+  </section>
+</div>
+
+<hr class="div">
+
+<div class="prose">
+  <section>
+    <h2>Claude Code / Agent SDKの公式ドキュメントは何と言っているか</h2>
+    <p>今回わかったことのうち、どこまでが公式に文書化されていて、どこからが実測でしか確かめられない領域なのかを整理した。</p>
+  </section>
+</div>
+
+<div class="wide">
+  <div class="doclist">
+    <div class="docrow yes">
+      <div class="ico">✓</div>
+      <div class="txt">「1 agent session = 1 subprocess」——<code>query()</code>を呼ぶたびに独立した<code>claude</code> CLIサブプロセスが起動される、という粒度は明記されている。
+        <span class="src">Agent SDK — Hosting the Agent SDK「The subprocess model」</span>
+      </div>
+      <div class="pill">記載あり</div>
+    </div>
+    <div class="docrow yes">
+      <div class="ico">✓</div>
+      <div class="txt">MCPサーバーの<b>接続</b>タイミング(初回ターンを待つか否か、タイムアウト)や、<code>connected</code>/<code>pending</code>/<code>failed</code>/<code>needs-auth</code>といった状態遷移、自動再接続は詳しく記載されている。
+        <span class="src">Agent SDK — Connect to external tools with MCP「Connection timing」「Error handling」</span>
+      </div>
+      <div class="pill">記載あり</div>
+    </div>
+    <div class="docrow no">
+      <div class="ico">✕</div>
+      <div class="txt">stdio MCPサーバーの子プロセスを<b>いつ・どうやって終了させるか</b>(シグナルの種類、タイミング)についての記載。
+        <span class="src">Claude Code / Agent SDK 双方のMCP関連ページを確認、いずれも未記載</span>
+      </div>
+      <div class="pill">記載なし</div>
+    </div>
+    <div class="docrow no">
+      <div class="ico">✕</div>
+      <div class="txt">MCPサーバー(孫プロセス)がサブエージェントの完了と独立に、トップレベルセッション終了まで生存し続けるという挙動そのもの。
+        <span class="src">サブエージェント関連ページに該当記載なし</span>
+      </div>
+      <div class="pill">記載なし</div>
+    </div>
+    <div class="docrow no">
+      <div class="ico">✕</div>
+      <div class="txt">Node.jsホストプロセス自体がクラッシュ/強制終了した場合に、CLIやMCPサーバーの子プロセスがどう扱われるか(孤児化するかどうか)。
+        <span class="src">Hosting the Agent SDK含め該当記載なし。今回最も重要な発見がまさにこの未文書化領域だった</span>
+      </div>
+      <div class="pill">記載なし</div>
+    </div>
+  </div>
+</div>
+
+<div class="prose">
+  <section>
+    <p style="margin-top:24px;">つまり「<code>query()</code>単位でプロセスが独立する」という<b>粒度の設計思想</b>自体は公式に裏付けが取れる一方、その内部で<b>実際に何のシグナルが、どんな経路で、どれくらいの遅延で</b>子プロセスに届くかは、今回のような実測でしか確認できない領域だった。</p>
+  </section>
+</div>
+
+<hr class="div">
+
+<div class="prose">
+  <section>
+    <h2>結局、何ができるようになったのか</h2>
+    <p>この記事の一次的な価値は、<b>Claude Agent SDKのドキュメントに明記されていない領域を、実際にプロセスを動かして確かめた</b>ということそのものにある。その上で、この挙動が実務上何を意味するのかを一言でまとめると——</p>
+    <div class="callout">
+      <span class="h">TypeScriptで実装したagentは、uvで動くMCPサーバーを「プロセスがリークする心配なく」使える</span>
+      <p>ただし2つの条件つきだ。①MCPサーバー自身が(明示的に無視しない限り)シグナルかstdin EOFのどちらかに応答するという、MCP実装として最低限まっとうな作り方をしていること。②<b>Node.jsホストプロセス自体が、クラッシュではなく正常な経路で終了すること</b>。①は多少雑な実装でも<code>uv run</code>自身の安全装置(H/I)や最終手段のSIGKILL(F)がカバーしてくれる。問題は②で、ここだけはSDK側にもOS側にも自動的な安全網が存在しない。</p>
+    </div>
+    <ul>
+      <li><b>正常系の後始末を自分で書く必要はない。</b>正常終了・中断・サブエージェント経由・逐次/並列セッションのいずれでも、<code>query()</code>セッションが終わればMCPサーバーの子プロセスは1〜2秒以内にSDK側が終了させる。</li>
+      <li><b>多少行儀の悪いMCPサーバーでも、ほぼ大丈夫。</b>シグナルを無視するだけならstdin EOFが、それも無視するならCLIの最終手段(約5.8秒後のSIGKILL)が、さらにCLI自体が消えても<code>uv run</code>自身の安全装置(約1秒)が働く。<b>3重の安全網</b>があると言っていい。</li>
+      <li><b>本当に気をつけるべきはただ1点、ホストプロセスのクラッシュ耐性。</b>Node.jsプロセス自体が<code>kill -9</code>やOOM Killerなどで突然死すると、<code>claude</code> CLIプロセスは孤児として確実に残り、MCPサーバーもタイミング次第で残る。コンテナやsystemdなど、<b>プロセスグループ単位で確実に後始末する仕組みを持つプロセス監督者の下で動かす</b>ことが唯一の対策になる。</li>
+      <li><b>状態はセッション(=1回のquery())をまたいで残らない。</b>stdio transportである以上、これは実装の都合ではなく仕様上の必然。複数ターンにまたがる状態を持たせたいなら、MCPサーバー自体をStreamable HTTPの長命プロセスとして設計し直す必要がある。</li>
+      <li><b>公式ドキュメントは「粒度」までしか教えてくれない。</b>「1 query() = 1 subprocess」という設計思想は文書化されているが、シグナルの種類・タイミング・異常系での挙動は今回のように自前のシグナルハンドラとプロセスツリー観察で確かめるほかなかった。</li>
+    </ul>
+  </section>
+</div>
+
+<footer>
+  <div class="prose">
+    <p class="mono">検証一式(Pythonサーバー・TypeScriptクライアント・実測ログ・本レポートの元記事)は検証用リポジトリ <span class="mono">gekko_0</span> にコミット済み。SSE/HTTP型MCPサーバーでの挙動、およびシグナルとstdin EOFの両方に加えて更にOSレベルの異常(D状態でのハング等)まで無視するサーバーの挙動は本検証の対象外。</p>
+  </div>
+</footer>
