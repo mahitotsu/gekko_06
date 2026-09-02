@@ -47,7 +47,7 @@ API通信・ツールの実行判断・MCPサーバーとの接続管理をし�
 
 検証対象の軸は、思い切って2つだけに絞りました。
 
-- **Trigger(終了トリガー)**: `normal-completion`(正常完了) / `interrupt`(中断) / `subagent`(サブエージェント経由) / `kill-cli`(CLIを外部からSIGKILL) / `kill-node`(Node.jsホストを外部からSIGKILL)
+- **Trigger(終了トリガー)**: `normal-completion`(正常完了) / `interrupt`(Node.jsプロセス自身が`query.interrupt()`を呼び、CLIの実行中のターンを中断) / `subagent`(サブエージェント経由) / `kill-cli`(CLIを外部からSIGKILL) / `kill-node`(Node.jsホストを外部からSIGKILL)
 - **ServerBehavior(MCPサーバーの行儀)**: `normal`(シグナル・EOFに素直に応答) / `ignore-signals`(シグナルだけ無視) / `ignore-signals-and-eof`(シグナルもEOFも無視して居座る)
 
 この2軸**以外**の条件は、1箇所の定数に固定して全15シナリオで共有しています。MCPサーバーが公開するツールは`work(seconds)`という1つだけで、渡された秒数だけ`time.sleep()`でブロッキングするだけの単純な実装です。全シナリオで、この`work`ツールを同じ6秒という秒数で呼び出しています。ポーリング間隔は200ms、終了トリガー発火後の観察時間は一律90秒です。許可ツールや`permissionMode`も同様に固定しました。
