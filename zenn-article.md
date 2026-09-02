@@ -14,7 +14,7 @@ Claude Agent SDK (TypeScript) で `mcpServers` に stdio 型の MCP サーバー
 
 [Agent SDK の公式ドキュメント](https://code.claude.com/docs/en/agent-sdk/mcp)には、MCP サーバーの**接続**タイミングやステータス遷移は詳しく書かれている一方、**子プロセスをいつ・どうやって終了させるか**(シグナルの種類、タイミング、異常系での挙動)についての記載は見当たりません。
 
-これは机上の空論ではなく、実際に GitHub 上で複数回報告されている実害です。
+ドキュメントに書かれていないだけなら、単に「仕様の穴」の指摘で終わる話です。しかし実際には、これが原因とみられるプロセスリークが GitHub 上で複数回、実害として報告されています。
 
 - [anthropics/claude-agent-sdk-typescript #142](https://github.com/anthropics/claude-agent-sdk-typescript/issues/142): 本番環境で24時間の通常使用後に**47個の孤児プロセス、累積約3GBのメモリ浪費**を観測
 - [anthropics/claude-code #22612](https://github.com/anthropics/claude-code/issues/22612): VSCode拡張のウィンドウを閉じると**96個の孤児Pythonプロセス(CPU 74%)**が残留
