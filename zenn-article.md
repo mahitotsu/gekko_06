@@ -76,15 +76,7 @@ API通信・ツールの実行判断・MCPサーバーとの接続管理をし�
 
 サーバーが素直にシグナル・stdin EOFへ応答する`normal`の場合に限れば、`normal-completion`/`interrupt`/`subagent`のいずれのトリガーでも実質0秒で終了します。最初のポーリングサンプルの時点で、すでに死亡していました。後始末のコードを自分で書く必要はありません。シグナルを無視する行儀の悪いサーバーでは話が変わってくるので、それは発見2で扱います。
 
-サーバーに直接シグナルハンドラを仕込んで実測すると、**`SIGINT`と`SIGTERM`が1ミリ秒未満の差でほぼ同時に**届いていました。
-
-[MCP公式仕様(2025-06-18)のLifecycle章](https://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle#shutdown)は、stdio transportのシャットダウン手順を次のように定めています。
-
-> 1. まずサーバーへの入力ストリーム(stdin)を閉じる
-> 2. サーバーの終了を待つ。合理的な時間内に終了しなければ`SIGTERM`
-> 3. `SIGTERM`後も終了しなければ`SIGKILL`
-
-実測では「様子見」の段階は観測されず、stdinのクローズも(シグナルと)並行して行われているようでした。仕様の"SHOULD"からは外れていますが、`SIGTERM`だけで毎回きれいに終了できている以上、実害のあるずれではなさそうです。
+サーバーに直接シグナルハンドラを仕込んで実測すると、**`SIGINT`と`SIGTERM`が1ミリ秒未満の差でほぼ同時に**届いていました(MCP公式仕様との比較は後述します)。
 
 ## 発見2: 行儀の悪いサーバーにも、多段の安全網がある
 
@@ -133,6 +125,14 @@ CLIはホストプロセスが死んで孤児になっても、進行中のツ�
 `kill-cli`/`kill-node`トリガーで対象の`claude` CLIプロセスを特定する際は、`ps -eo pid,ppid,cmd`からプロセスツリーをたどり、**自分が起動した子孫プロセスの中だけ**を探している。今回の検証環境はVS Code拡張のホストプロセス上で動作しており、他のセッションが同名バイナリを使っていることがある。システム全体を対象にした`pgrep -f "claude-agent-sdk-.*/claude"`のようなパターンマッチだけに頼ると、そうした無関係なプロセスを誤って検出する危険がある。候補が1つに定まらない場合はkillを見送り、結果に記録するだけにしている。
 
 ## MCP公式仕様・公式ドキュメントとの比較
+
+[MCP公式仕様(2025-06-18)のLifecycle章](https://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle#shutdown)は、stdio transportのシャットダウン手順を次のように定めています。
+
+> 1. まずサーバーへの入力ストリーム(stdin)を閉じる
+> 2. サーバーの終了を待つ。合理的な時間内に終了しなければ`SIGTERM`
+> 3. `SIGTERM`後も終了しなければ`SIGKILL`
+
+発見1で見た通り、実測では「様子見」の段階は観測されず、`SIGINT`と`SIGTERM`がほぼ同時に送られていました。stdinのクローズも(シグナルと)並行して行われているようです。仕様の"SHOULD"からは外れていますが、`SIGTERM`だけで毎回きれいに終了できている以上、実害のあるずれではなさそうです。
 
 [Transports章 Session Management節](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#session-management)によれば、"session"の対応関係はtransportごとに異なります。stdioではセッションIDという概念自体が存在せず、「1回のサブプロセス起動 = 1セッション」が構造的に固定されます。今回のトポロジー確認の結果(逐次・並列いずれも別PID)はこれと整合します。
 
