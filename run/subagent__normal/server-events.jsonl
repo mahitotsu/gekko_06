@@ -1,7 +1,0 @@
-{"ts": "2026-09-02T12:19:03.401909+00:00", "pid": 179259, "event": "started", "behavior": "normal", "pid_file": "/home/akring/gekko_0/run/subagent__normal/server.pid"}
-{"ts": "2026-09-02T12:19:09.674790+00:00", "pid": 179259, "event": "work_started", "seconds": 6.0, "label": "scenario"}
-{"ts": "2026-09-02T12:19:15.676642+00:00", "pid": 179259, "event": "work_finished", "seconds": 6.0, "label": "scenario"}
-{"ts": "2026-09-02T12:19:19.333793+00:00", "pid": 179259, "event": "signal_received", "signal": "SIGINT", "signum": 2}
-{"ts": "2026-09-02T12:19:19.334624+00:00", "pid": 179259, "event": "signal_received", "signal": "SIGTERM", "signum": 15}
-{"ts": "2026-09-02T12:19:19.991826+00:00", "pid": 179259, "event": "system_exit", "code": 130}
-{"ts": "2026-09-02T12:19:19.991969+00:00", "pid": 179259, "event": "process_exiting"}

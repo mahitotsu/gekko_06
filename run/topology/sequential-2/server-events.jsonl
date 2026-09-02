@@ -1,7 +1,0 @@
-{"ts": "2026-09-02T12:22:26.621331+00:00", "pid": 180692, "event": "started", "behavior": "normal", "pid_file": "/home/akring/gekko_0/run/topology/sequential-2/server.pid"}
-{"ts": "2026-09-02T12:22:30.885613+00:00", "pid": 180692, "event": "work_started", "seconds": 6.0, "label": "scenario"}
-{"ts": "2026-09-02T12:22:36.888027+00:00", "pid": 180692, "event": "work_finished", "seconds": 6.0, "label": "scenario"}
-{"ts": "2026-09-02T12:22:39.218350+00:00", "pid": 180692, "event": "signal_received", "signal": "SIGINT", "signum": 2}
-{"ts": "2026-09-02T12:22:39.219552+00:00", "pid": 180692, "event": "signal_received", "signal": "SIGTERM", "signum": 15}
-{"ts": "2026-09-02T12:22:39.939910+00:00", "pid": 180692, "event": "system_exit", "code": 130}
-{"ts": "2026-09-02T12:22:39.940066+00:00", "pid": 180692, "event": "process_exiting"}

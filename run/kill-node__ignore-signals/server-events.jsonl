@@ -1,7 +1,0 @@
-{"ts": "2026-09-02T12:21:08.162655+00:00", "pid": 180298, "event": "started", "behavior": "ignore-signals", "pid_file": "/home/akring/gekko_0/run/kill-node__ignore-signals/server.pid"}
-{"ts": "2026-09-02T12:21:11.640352+00:00", "pid": 180298, "event": "work_started", "seconds": 6.0, "label": "scenario"}
-{"ts": "2026-09-02T12:21:17.648839+00:00", "pid": 180298, "event": "work_finished", "seconds": 6.0, "label": "scenario"}
-{"ts": "2026-09-02T12:21:19.387969+00:00", "pid": 180298, "event": "signal_ignored", "signal": "SIGINT", "signum": 2}
-{"ts": "2026-09-02T12:21:19.388368+00:00", "pid": 180298, "event": "signal_ignored", "signal": "SIGTERM", "signum": 15}
-{"ts": "2026-09-02T12:21:19.688040+00:00", "pid": 180298, "event": "run_returned_naturally"}
-{"ts": "2026-09-02T12:21:19.688449+00:00", "pid": 180298, "event": "process_exiting"}
