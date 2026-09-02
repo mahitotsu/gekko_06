@@ -8,6 +8,7 @@
     "matrix:one": "tsx runScenario.ts",
     "topology": "tsx runTopology.ts",
     "render": "tsx renderMatrix.ts",
+    "aggregate": "tsx aggregateResults.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

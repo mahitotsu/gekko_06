@@ -1,7 +1,10 @@
 // 1つの (Trigger, ServerBehavior) の組み合わせを実行する唯一のエントリポイント。
 // 全シナリオが同じ手順(起動待ち→トリガー適用→固定時間の生死観測→結果書き出し)を通る。
 //
-// usage: npx tsx runScenario.ts --trigger=<T> --behavior=<B>
+// usage: npx tsx runScenario.ts --trigger=<T> --behavior=<B> [--rep=<N>]
+// --rep を指定すると、同じ組み合わせを複数回実行して統計を取るための
+// 反復インデックスとして扱い、結果ファイル名に __rep<N> を付与する
+// (指定しない場合は従来通りの単発実行としてrepなしのファイル名を使う)。
 import { spawn, type ChildProcess } from "node:child_process";
 import { mkdirSync, rmSync, writeFileSync, existsSync, readFileSync } from "node:fs";
 import path from "node:path";
@@ -14,7 +17,7 @@ import { waitFor, findClaudeCliPidsUnder, forceKill, isAlive, cmdlineOf } from "
 import { waitForEvent, readEvents } from "./src/eventsLog";
 import { trackLiveness } from "./src/liveness";
 
-function parseArgs(): { trigger: Trigger; behavior: ServerBehavior } {
+function parseArgs(): { trigger: Trigger; behavior: ServerBehavior; rep: number | null } {
   const args = Object.fromEntries(
     process.argv.slice(2).map((a) => {
       const [k, v] = a.replace(/^--/, "").split("=");
@@ -25,12 +28,13 @@ function parseArgs(): { trigger: Trigger; behavior: ServerBehavior } {
   const behavior = args.behavior as ServerBehavior;
   if (!ALL_TRIGGERS.includes(trigger)) throw new Error(`invalid --trigger: ${args.trigger}`);
   if (!ALL_BEHAVIORS.includes(behavior)) throw new Error(`invalid --behavior: ${args.behavior}`);
-  return { trigger, behavior };
+  const rep = args.rep !== undefined ? Number(args.rep) : null;
+  return { trigger, behavior, rep };
 }
 
 async function main() {
-  const { trigger, behavior } = parseArgs();
-  const scenarioId = `${trigger}__${behavior}`;
+  const { trigger, behavior, rep } = parseArgs();
+  const scenarioId = rep === null ? `${trigger}__${behavior}` : `${trigger}__${behavior}__rep${rep}`;
   const scenarioDir = path.join(RUN_DIR, scenarioId);
   rmSync(scenarioDir, { recursive: true, force: true });
   mkdirSync(scenarioDir, { recursive: true });
