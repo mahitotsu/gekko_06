@@ -56,27 +56,27 @@ API通信・ツールの実行判断・MCPサーバーとの接続管理をし�
 
 ## 結果:Trigger × ServerBehavior フルマトリクス(15/15)
 
-実際に動かしてみると、こうなりました。
+実際に動かしてみると、こうなりました。表の「+N秒」は、どちらの列も**トリガーが発火した瞬間を0秒とした経過時間**です。cli列は`kill-cli`/`kill-node`のように、そもそもCLIプロセスへ何かする(killする)トリガーのときだけ意味を持つので、それ以外のトリガーでは測定対象外という意味で`n/a`にしています。
 
-| trigger | behavior | server(MCPサーバー) | cli(claudeプロセス) |
+| trigger | behavior | cli(claudeプロセス) | server(MCPサーバー) |
 |---|---|---|---|
-| normal-completion | normal | 死亡 (+0.00s) | n/a |
-| normal-completion | ignore-signals | 死亡 (+0.00s) | n/a |
-| normal-completion | ignore-signals-and-eof | 死亡 (+0.85s) | n/a |
-| interrupt | normal | 死亡 (+0.00s) | n/a |
-| interrupt | ignore-signals | 死亡 (+1.04s) | n/a |
-| interrupt | ignore-signals-and-eof | 死亡 (+1.04s) | n/a |
-| subagent | normal | 死亡 (+0.00s) | n/a |
-| subagent | ignore-signals | 死亡 (+0.00s) | n/a |
-| subagent | ignore-signals-and-eof | 死亡 (+0.83s) | n/a |
-| kill-cli | normal | 死亡 (+6.19s) | 死亡 (+0.20s) |
-| kill-cli | ignore-signals | 死亡 (+6.15s) | 死亡 (+0.20s) |
-| kill-cli | ignore-signals-and-eof | 死亡 (+6.20s) | 死亡 (+0.20s) |
-| kill-node | normal | 死亡 (+8.56s) | 死亡 (+8.96s) |
-| kill-node | ignore-signals | 死亡 (+8.33s) | 死亡 (+8.74s) |
-| kill-node | ignore-signals-and-eof | 死亡 (+13.50s) | 死亡 (+12.65s) |
+| normal-completion | normal | n/a | 死亡 (+0.00s) |
+| normal-completion | ignore-signals | n/a | 死亡 (+0.00s) |
+| normal-completion | ignore-signals-and-eof | n/a | 死亡 (+0.85s) |
+| interrupt | normal | n/a | 死亡 (+0.00s) |
+| interrupt | ignore-signals | n/a | 死亡 (+1.04s) |
+| interrupt | ignore-signals-and-eof | n/a | 死亡 (+1.04s) |
+| subagent | normal | n/a | 死亡 (+0.00s) |
+| subagent | ignore-signals | n/a | 死亡 (+0.00s) |
+| subagent | ignore-signals-and-eof | n/a | 死亡 (+0.83s) |
+| kill-cli | normal | 死亡 (+0.20s) | 死亡 (+6.19s) |
+| kill-cli | ignore-signals | 死亡 (+0.20s) | 死亡 (+6.15s) |
+| kill-cli | ignore-signals-and-eof | 死亡 (+0.20s) | 死亡 (+6.20s) |
+| kill-node | normal | 死亡 (+8.96s) | 死亡 (+8.56s) |
+| kill-node | ignore-signals | 死亡 (+8.74s) | 死亡 (+8.33s) |
+| kill-node | ignore-signals-and-eof | 死亡 (+12.65s) | 死亡 (+13.50s) |
 
-(cli列の「+N秒」はトリガー発火からの経過時間です。`kill-cli`/`kill-node`のcliはkill対象そのものなので、死亡検知は「本当にkillできたか」の確認だと思ってください。)
+cli列を左、server列を右に置いているのは「CLIへの操作が原因、MCPサーバーの死亡が結果」という向きに読めるようにするためですが、実際の前後関係は一定していません。`kill-cli`ではCLIの死亡(kill対象そのものなので、ほぼ即座に確認できます)がサーバーより明確に先行しますが、`kill-node`では`normal`/`ignore-signals`だとサーバーの方が先に死に、`ignore-signals-and-eof`だと逆にCLIの方が先に死んでいます。CLIが自分の後始末を終えるタイミングと、サーバーへの通知が効くタイミングの前後関係は、行儀によって入れ替わるようです。
 
 加えて、セッション/プロセスの対応関係も別枠で確認しました。メインNode.jsプロセスを終了させずに`query()`を2回連続実行すると、MCPサーバーは毎回**別PID**で立ち上がり直します。並列に2つ実行しても、2つのMCPサーバーが**同時刻に**独立して生存します。stdio transportである以上、「1 `query()` = 1 MCPサーバープロセス = 1セッション」が仕様上の必然だからです(詳しくは後述します)。
 
