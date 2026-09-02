@@ -1,0 +1,15 @@
+{
+  "sequential": {
+    "session1Pid": 180612,
+    "session1AliveAfterOwnSessionEnded": false,
+    "session2Pid": 180692,
+    "session2AliveAfterOwnSessionEnded": false,
+    "samePid": false
+  },
+  "parallel": {
+    "sessionAPid": 180826,
+    "sessionBPid": 180808,
+    "bothAliveAtSameInstant": true,
+    "samePid": false
+  }
+}

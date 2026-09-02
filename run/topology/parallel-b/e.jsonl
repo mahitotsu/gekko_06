@@ -1,0 +1,7 @@
+{"ts": "2026-09-02T12:22:42.879193+00:00", "pid": 180808, "event": "started", "behavior": "normal", "pid_file": "/home/akring/gekko_0/run/topology/parallel-b/server.pid"}
+{"ts": "2026-09-02T12:22:47.378050+00:00", "pid": 180808, "event": "work_started", "seconds": 6.0, "label": "scenario"}
+{"ts": "2026-09-02T12:22:53.379575+00:00", "pid": 180808, "event": "work_finished", "seconds": 6.0, "label": "scenario"}
+{"ts": "2026-09-02T12:22:56.325272+00:00", "pid": 180808, "event": "signal_received", "signal": "SIGINT", "signum": 2}
+{"ts": "2026-09-02T12:22:56.326046+00:00", "pid": 180808, "event": "signal_received", "signal": "SIGTERM", "signum": 15}
+{"ts": "2026-09-02T12:22:57.064890+00:00", "pid": 180808, "event": "system_exit", "code": 130}
+{"ts": "2026-09-02T12:22:57.065050+00:00", "pid": 180808, "event": "process_exiting"}
