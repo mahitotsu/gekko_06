@@ -482,7 +482,7 @@
   <div class="prose">
     <p class="eyebrow">検証レポート — Claude Agent SDK (TypeScript)</p>
     <h1 class="title">stdio MCPサーバーの寿命</h1>
-    <p class="dek"><code>uv run</code> で起動したMCPサーバーの子プロセスを、Claude Agent SDKはいつ・どうやって終了させるのか。11パターンの実験とプロセスツリー観察、そしてMCP仕様・公式ドキュメントとの突き合わせで確かめた記録。</p>
+    <p class="dek"><code>uv run</code> で起動したMCPサーバーの子プロセスを、Claude Agent SDKはいつ・どうやって終了させるのか。トリガー×サーバーの行儀という2軸を固定した構造化ハーネスで全15組み合わせを実測し、プロセスツリー観察・MCP仕様・公式ドキュメントとの突き合わせで確かめた記録。</p>
     <div class="meta-row">
       <span class="chip">検証日 <b>2026-09-01〜02</b></span>
       <span class="chip">@anthropic-ai/claude-agent-sdk <b>0.3.252</b></span>
@@ -495,7 +495,7 @@
 
 <div class="prose">
   <section>
-    <p class="lede">MCPサーバーをstdio(標準入出力)でつなぐと、クライアント側がサブプロセスとして起動する。ではセッションが終わったあと、その子プロセスは誰が、どう片付けるのか。放置してゾンビ化しないのか、行儀の悪いサーバーだったら、親プロセス自体が突然死んだら——公式ドキュメントには書かれていないこの領域を、11パターンの実験とプロセスツリー観察で確かめた。</p>
+    <p class="lede">MCPサーバーをstdio(標準入出力)でつなぐと、クライアント側がサブプロセスとして起動する。ではセッションが終わったあと、その子プロセスは誰が、どう片付けるのか。放置してゾンビ化しないのか、行儀の悪いサーバーだったら、親プロセス自体が突然死んだら——公式ドキュメントには書かれていないこの領域を、<b>Trigger(終了トリガー)× ServerBehavior(サーバーの行儀)</b>という2軸を固定した構造化ハーネスで、全15組み合わせを実測して確かめた。</p>
   </section>
 </div>
 
@@ -504,20 +504,20 @@
     <h2>先に結論</h2>
     <div class="tldr-grid">
       <div class="tldr-card">
-        <div class="k">正常系(A〜G)</div>
-        <div class="v">正常終了・中断・サブエージェント・逐次/並列セッション、すべて<span class="num">1〜2秒</span>で子プロセスは自動的に消える。後始末コードは不要。</div>
+        <div class="k">正常系(normal-completion / interrupt / subagent)</div>
+        <div class="v">行儀の良いサーバーなら、どのトリガーでも<span class="num">実質0秒</span>で子プロセスは消える。後始末コードは不要。</div>
       </div>
       <div class="tldr-card">
-        <div class="k">行儀の悪いサーバー(E, F)</div>
-        <div class="v">シグナルを無視しても<span class="num">stdin EOF</span>で自然終了。それも無視する最強に強情な相手には、約<span class="num">5.8秒後</span>にSIGKILL。</div>
+        <div class="k">行儀の悪いサーバー(ignore-signals / -and-eof)</div>
+        <div class="v">シグナルを無視しても<span class="num">stdin EOF</span>で自然終了。それも無視する相手には、シグナル送信から約<span class="num">5.5秒後</span>にSIGKILL。</div>
       </div>
       <div class="tldr-card">
-        <div class="k">CLIプロセスを直接kill(H, I)</div>
-        <div class="v"><code>uv</code>自体が独立した安全装置になっていて、約<span class="num">1秒</span>で子(MCPサーバー)を道連れに自滅する。</div>
+        <div class="k">CLIプロセスを直接kill</div>
+        <div class="v"><code>uv</code>自体が独立した安全装置になっていて、I/O待ち中なら約1秒で自滅する。ただしブロッキング処理の実行中は、その処理が終わる<span class="num">約6秒後</span>まで気づかない。</div>
       </div>
       <div class="tldr-card">
-        <div class="k">Node.jsホスト自体がクラッシュ(J, K)</div>
-        <div class="v">この安全装置は働かない。CLIプロセスは<span class="num">最大60秒</span>観察しても自己終了せず、確実に孤児として残る。<b>唯一の本物のリーク源</b>。</div>
+        <div class="k">Node.jsホスト自体がクラッシュ</div>
+        <div class="v">CLIは孤児化しても、進行中のターンを終えたのち<span class="num">約9〜13秒後</span>に自分から終了する。「無期限に残る」という初期の結論は観察時間不足による誤りだった。</div>
       </div>
     </div>
   </section>
@@ -566,6 +566,10 @@
     <h2>実験の骨組み</h2>
     <p>最小のFastMCPサーバー(Python、<code>uv run</code>で起動)を1つ用意した。ツールは即応する<code>echo</code>と、指定秒数sleepしてから返す<code>slow_echo</code>の2つだけ。起動直後に自分のPIDをファイルへ書き出し、ログはすべてstderrに逃がしてJSON-RPCの邪魔をしないようにしている。</p>
     <p>TypeScript側は<code>@anthropic-ai/claude-agent-sdk</code>の<code>query()</code>にこのサーバーを<code>mcpServers</code>として登録し、<code>allowedTools</code>で該当ツールだけを許可、<code>disallowedTools</code>でBashなど他の手段を封じて「MCP経由でしか目的を達成できない」状況を作った。プロセスの生死は外側から<code>kill -0</code>で0.2秒間隔にポーリングし、スクリプト終了後も30秒間追跡している。</p>
+    <div class="callout">
+      <span class="h">この先の読み方</span>
+      <p>以下のPattern A〜Kは、質問を思いつくたびにスクリプトをコピーして増やしていった<b>探索段階</b>の記録だ。ポーリング間隔や観察時間、ツール呼び出しの秒数がパターンごとに微妙に違っており、「検証対象以外の条件を揃える」という基本には忠実でなかった。この探索で見えてきた仮説は、記事後半で<b>Trigger×ServerBehaviorの2軸を固定した構造化ハーネス</b>により全組み合わせで検算し直している。数値に小さな差異がある箇所は、後半の実測値の方を正としてほしい。</p>
+    </div>
   </section>
 </div>
 
@@ -832,6 +836,10 @@
     <span class="h">SIGKILLは実在した</span>
     <p>CLIは、シグナルを無視するだけの相手にはstdin EOFという第二の手段で対応し、それすら無視する本当に強情な相手には、約<b>5.8秒</b>の猶予を与えたのち有無を言わさず<code>SIGKILL</code>していた。<code>SIGKILL</code>はカーネルレベルで強制されるシグナルで、ハンドラの登録・無視・ブロックが一切できない——プロセス側に打つ手はない。</p>
   </div>
+  <div class="callout">
+    <span class="h">後日談: この「5.8秒」は何からの5.8秒か</span>
+    <p>後半の構造化ハーネスで同じ組み合わせを検算したところ、<b>シグナル送信からSIGKILLまでは約5.5秒</b>で一致した——ただし<code>query()</code>のfor-awaitループが完了する瞬間は、この後始末の<b>終盤(強制終了の直前)とほぼ重なっていた</b>。つまり呼び出し側から見ると「<code>query()</code>が返ってきてから実際にプロセスが消えるまで」は1秒もかからない。CLIはターンの完了report(結果を返すこと)と、MCP接続の後始末を<b>並行して</b>進めており、両者は同じ瞬間には終わらない。詳しくは後半の「構造化ハーネスでの検算」を参照。</p>
+  </div>
 </div>
 
 <hr class="div">
@@ -841,8 +849,8 @@
     <h2>親が死んだら、子はどうなるか</h2>
     <p>ここまでの実験は全部、<b>親(CLI)が生きたまま自発的に子を後始末する</b>ケースだった。では親自体が——たとえばホストプロセスがクラッシュして——後始末する間もなく突然死んだらどうなるのか。これは読者からの指摘で気づいた、本質的に別の問いだった。</p>
 
-    <h3>CLIプロセスを直接killする(H, I)</h3>
-    <p>外部から<code>claude</code> CLIプロセスへ<code>kill -9</code>を撃ち込み、通常サーバー(H)と最強に強情なサーバー(I)それぞれの生死を追った。</p>
+    <h3>CLIプロセスを直接killする</h3>
+    <p>外部から<code>claude</code> CLIプロセスへ<code>kill -9</code>を撃ち込み、通常サーバーと最強に強情なサーバーそれぞれの生死を追った。</p>
   </section>
 </div>
 
@@ -856,37 +864,26 @@
 
 <div class="prose">
   <section>
-    <p style="margin-top:20px;">結果は両方とも<b>約1秒で終了</b>——通常サーバー(H)は1.0秒、最強に強情なサーバー(I)ですら1.1秒だった。シグナルを無視するIのケースでは、サーバー自身のログに<code>SIGNAL_RECEIVED</code>の記録が<b>一切ない</b>。それでも死んでいる。<code>uv</code>自身のPIDを追跡すると、<code>uv</code>と<code>python3</code>が<b>ほぼ同時(0.3秒以内)に消滅</b>していた。CLIが死ぬと、直接の子である<code>uv</code>が自分の入出力の破損を検知して、<b>子(MCPサーバー)を道連れに自滅している</b>——<code>uv run</code>自体が、CLIとは独立したもう一段の安全装置として機能していた。</p>
+    <p style="margin-top:20px;"><code>uv</code>自身のPIDを追跡すると、CLIが死んだ直後に<code>uv</code>と<code>python3</code>が<b>ほぼ同時(0.3秒以内)に消滅</b>していた。CLIが死ぬと、直接の子である<code>uv</code>が自分の入出力の破損を検知して、<b>子(MCPサーバー)を道連れに自滅している</b>——<code>uv run</code>自体が、CLIとは独立したもう一段の安全装置として機能していた。</p>
+    <div class="callout warn">
+      <span class="h">ただし、これは相手が「I/O待ち」をしているときに限る</span>
+      <p>この約1秒という速さは、サーバーが積極的にstdioを読み書きしている(=何かのI/Oを待っている)瞬間に限った話だった。もしサーバーが<code>time.sleep()</code>のような<b>I/Oを一切行わないブロッキング処理の最中</b>にCLIが死ぬと、<code>uv</code>の安全装置があっても、その処理が終わって次にI/Oしようとするまで誰も気づけない。これは後半の構造化ハーネスで、たまたまツール呼び出しの実装を変えたことで発覚した——詳しくは次の章。</p>
+    </div>
 
-    <h3>Node.jsホストプロセスそのものをkillする(J, K)</h3>
-    <p>今度はCLIの親、つまり<code>npx tsx ...</code>を実行しているNode.jsプロセス自体を外部から<code>kill -9</code>する。CLIより一段上を落とすだけなので、理屈上は同じ結果になりそうに思えたが——</p>
+    <h3>Node.jsホストプロセスそのものをkillする</h3>
+    <p>今度はCLIの親、つまり<code>npx tsx ...</code>を実行しているNode.jsプロセス自体を外部から<code>kill -9</code>する。CLIより一段上を落とすだけなので、理屈上は同じ結果になりそうに思えたが——観察を30〜60秒で打ち切った初期の実験では、CLIは一度も自己終了しなかった。この結論は誤りだった。詳細は次の章で訂正する。</p>
   </section>
 </div>
 
-<div class="wide">
-  <div class="pidwrap">
-    <div class="main-pid">Node.jsホストプロセス — 外部から<code>kill -9</code>(この後は存在しない)</div>
-    <div class="pid-cols">
-      <div class="pid-box">
-        <div class="q">通常サーバー(J / J2)</div>
-        <div class="pid" style="color:var(--signal); font-size:16px;">CLI: 25〜30秒生存<br>server: 12〜30秒でまちまち</div>
-        <div class="status">タイミング次第で結果が変わる。保証された挙動ではない</div>
-      </div>
-      <div class="pid-box">
-        <div class="q">最強に強情なサーバー(K)</div>
-        <div class="pid" style="color:var(--dead); font-size:16px;">CLI: 60秒経過後も<b>生存</b><br>server: 51.8秒後に消滅</div>
-        <div class="status">CLIは観測終了まで自己終了せず、手動killが必要だった</div>
-      </div>
-    </div>
-  </div>
-</div>
+<hr class="div">
 
 <div class="prose">
   <section>
-    <p>唯一一貫していたのは、<b><code>claude</code> CLIプロセス自体は、観測した範囲(最大60秒)では一度も自己終了しなかった</b>ということだ。MCPサーバー側は「CLIが自分の出力を書き込もうとして初めてパイプの破損に気づき、そのMCP接続だけ後始末する」というタイミング依存の経路で片付くことがある(J2では約12秒後、Kでは約51.8秒後)が、保証された挙動ではない——長時間ツールの実行中に親が死ねば(J)、その機会自体が来ないまま30秒経っても両方生き続けていた。</p>
+    <h2>構造化ハーネスでの検算</h2>
+    <p>ここまでの探索で「シグナルの種類」「<code>uv</code>という隠れた安全装置」「観察時間が短いと結論を誤る」という3つの手がかりが見えてきた。パターンごとにスクリプトをコピーするやり方ではこれ以上の精度は出せないと判断し、検証対象を<b>Trigger(終了トリガー)</b>と<b>ServerBehavior(サーバーの行儀)</b>の2軸だけに絞り、それ以外の条件(ポーリング間隔200ms、観察時間90秒、ツール呼び出し秒数6秒、許可ツール…)を1箇所の定数に固定したハーネスに作り直した。全<b>5トリガー×3行儀=15通り</b>を、同じ手順(起動待ち→トリガー適用→固定90秒の観測→結果JSON書き出し)で実行し、決定表は手で転記せず実測データから機械的に生成している。</p>
     <div class="callout warn">
-      <span class="h">CLIを直接killする(H/I)のとは別物だった</span>
-      <p><code>uv</code>という安全装置が効くのは、あくまで<b>CLIの直接の子</b>が異常を検知できる場合に限られる。Node.jsが死ぬと、CLIは(<code>uv</code>から見て)まだ生きている親であり続けるため、<code>uv</code>の安全装置は発動しない。CLI自身が気づくかどうかは、その瞬間に何をしていたか次第——これが今回見つかった<b>唯一の、確実なプロセスリーク経路</b>だった。</p>
+      <span class="h">作り直す過程で見つけたバグ</span>
+      <p>CLIプロセスの特定に、システム全体を対象にした<code>pgrep -f "claude-agent-sdk-.*/claude"</code>を使っていたところ、ある実行で<b>このテスト開始より前から存在していた、無関係な別セッションのCLIプロセス</b>を誤って検出・killしていたことが判明した(このマシンはVS Code拡張のホストプロセス上で動いており、他のセッションが同名バイナリを使っていることがある)。プロセスツリーを<code>ps -eo pid,ppid,cmd</code>からたどり、<b>自分が起動した子孫プロセスの中だけ</b>を探す方式に修正し、候補が1つに定まらない場合はkillを見送るようにした。</p>
     </div>
   </section>
 </div>
@@ -894,18 +891,42 @@
 <div class="wide">
   <div class="table-wrap">
     <table>
-      <thead><tr><th>#</th><th>トリガー × サーバーの行儀</th><th>事前の期待</th><th>実測結果</th><th>判定</th></tr></thead>
+      <thead><tr><th>trigger</th><th>behavior</th><th>server(MCPサーバー)</th><th>cli(claudeプロセス)</th></tr></thead>
       <tbody>
-        <tr><td class="mono">A〜G</td><td>CLIが生きたまま自発的に後始末(既出7パターン)</td><td>即座〜数秒で終了</td><td>全て期待通り</td><td>的中</td></tr>
-        <tr><td class="mono">E</td><td>正常完了 × シグナルだけ無視</td><td>SIGKILLされるはず</td><td>stdin EOFで自然終了(SIGKILL不要)</td><td>外れた(良い意味で)</td></tr>
-        <tr><td class="mono">F</td><td>正常完了 × シグナル+EOF両方無視</td><td>最終的に強制終了されるはず</td><td>約5.8秒後にSIGKILL</td><td>的中</td></tr>
-        <tr><td class="mono">H</td><td>CLI突然死 × 通常サーバー</td><td>パイプ破損でEOF検知、自発終了</td><td>約1.0秒で終了</td><td>的中</td></tr>
-        <tr><td class="mono">I</td><td>CLI突然死 × 最強に強情</td><td>後始末役が消え孤児化するはず</td><td>約1.1秒で終了(<code>uv</code>が道連れに自滅)</td><td>外れた(良い意味で)</td></tr>
-        <tr><td class="mono">J / J2</td><td>Node.js突然死 × 通常サーバー</td><td>CLIがNode死亡を検知し後始末</td><td>CLIは30秒/25秒生存。serverはタイミング次第(12秒後 or 生存)</td><td>外れた(悪い意味で)</td></tr>
-        <tr><td class="mono">K</td><td>Node.js突然死 × 最強に強情</td><td>J系の傾向を追認</td><td>serverは51.8秒後に終了、CLIは60秒生存</td><td>J系の傾向を裏付け</td></tr>
+        <tr><td class="mono">normal-completion</td><td class="mono">normal</td><td>死亡 (+0.00s)</td><td>n/a</td></tr>
+        <tr><td class="mono">normal-completion</td><td class="mono">ignore-signals</td><td>死亡 (+0.00s)</td><td>n/a</td></tr>
+        <tr><td class="mono">normal-completion</td><td class="mono">ignore-signals-and-eof</td><td>死亡 (+0.85s)</td><td>n/a</td></tr>
+        <tr><td class="mono">interrupt</td><td class="mono">normal</td><td>死亡 (+0.00s)</td><td>n/a</td></tr>
+        <tr><td class="mono">interrupt</td><td class="mono">ignore-signals</td><td>死亡 (+1.04s)</td><td>n/a</td></tr>
+        <tr><td class="mono">interrupt</td><td class="mono">ignore-signals-and-eof</td><td>死亡 (+1.04s)</td><td>n/a</td></tr>
+        <tr><td class="mono">subagent</td><td class="mono">normal</td><td>死亡 (+0.00s)</td><td>n/a</td></tr>
+        <tr><td class="mono">subagent</td><td class="mono">ignore-signals</td><td>死亡 (+0.00s)</td><td>n/a</td></tr>
+        <tr><td class="mono">subagent</td><td class="mono">ignore-signals-and-eof</td><td>死亡 (+0.83s)</td><td>n/a</td></tr>
+        <tr><td class="mono">kill-cli</td><td class="mono">normal</td><td>死亡 (+6.19s)</td><td>死亡 (+0.20s)</td></tr>
+        <tr><td class="mono">kill-cli</td><td class="mono">ignore-signals</td><td>死亡 (+6.15s)</td><td>死亡 (+0.20s)</td></tr>
+        <tr><td class="mono">kill-cli</td><td class="mono">ignore-signals-and-eof</td><td>死亡 (+6.20s)</td><td>死亡 (+0.20s)</td></tr>
+        <tr><td class="mono">kill-node</td><td class="mono">normal</td><td>死亡 (+8.56s)</td><td>死亡 (+8.96s)</td></tr>
+        <tr><td class="mono">kill-node</td><td class="mono">ignore-signals</td><td>死亡 (+8.33s)</td><td>死亡 (+8.74s)</td></tr>
+        <tr><td class="mono">kill-node</td><td class="mono">ignore-signals-and-eof</td><td>死亡 (+13.50s)</td><td>死亡 (+12.65s)</td></tr>
       </tbody>
     </table>
   </div>
+  <p style="font-size:13px; color:var(--ink-faint); margin-top:10px;">15/15すべて実行に成功し、「CLI候補プロセスが1つに定まらなかった」という警告は0件。<code>results/*.json</code> → <code>renderMatrix.ts</code>で機械的に生成。</p>
+</div>
+
+<div class="prose">
+  <section>
+    <h3>読み取れること</h3>
+    <ul>
+      <li><b>正常系はどのトリガーでも実質0秒。</b>行儀の良いサーバーなら、中断もサブエージェントも次のポーリングサンプルで既に死亡している。</li>
+      <li><b><code>kill-cli</code>はどの行儀でもほぼ同じ約6.1〜6.2秒。</b>これはワークツールの呼び出し秒数(6秒)とほぼ一致する。イベントログを見ると、この経路ではシグナルは一切送られていない——サーバーは<code>time.sleep(6)</code>をブロッキングのまま最後まで実行し、完了後に結果を書き込もうとした瞬間に壊れたパイプ(<code>uv</code>も道連れに死んでいる)を検知してクラッシュしている。「行儀が良いか悪いか」はこの経路では無関係で、<b>死亡タイミングは進行中の処理がI/Oを行うまでの残り時間で決まる</b>。</li>
+      <li><b><code>kill-node</code>はCLIも約9〜13秒後に自己終了する。</b>初期の実験で「CLIは孤児化すると無期限に残り続ける」と結論づけたのは、<b>観察時間が最大60秒しかなかったことによる誤り</b>だった。全シナリオに一律90秒の観測窓を使うと、CLIは進行中のターンを完了させ、MCPサーバーへの通常の後始末(シグナル送信、応答がなければ強制終了)を一通り済ませたうえで、自分自身も終了していた。<code>ignore-signals-and-eof</code>だけ約13.5秒とやや長いのは、サーバー側の強制終了エスカレーション(約5.5秒)の分だけ余計に時間がかかっているためで、これも一貫した説明がつく。</li>
+    </ul>
+    <div class="callout">
+      <span class="h">結論の訂正</span>
+      <p>「Node.jsホストがクラッシュすると、CLIプロセスは唯一の確実なプロセスリーク源として無期限に残り続ける」という初期の結論は<b>撤回する</b>。正しくは:CLIは孤児化しても、実行中のターンが終わるまで(=長くて十数秒)は生き続けたのち、通常どおり自己終了する。プロセスが「残り続ける」ことがあるとすれば、それは無期限にではなく、進行中の処理に要する時間だけ、という話だった。</p>
+    </div>
+  </section>
 </div>
 
 <hr class="div">
@@ -1036,20 +1057,22 @@
     <p>この記事の一次的な価値は、<b>Claude Agent SDKのドキュメントに明記されていない領域を、実際にプロセスを動かして確かめた</b>ということそのものにある。その上で、この挙動が実務上何を意味するのかを一言でまとめると——</p>
     <div class="callout">
       <span class="h">TypeScriptで実装したagentは、uvで動くMCPサーバーを「プロセスがリークする心配なく」使える</span>
-      <p>ただし2つの条件つきだ。①MCPサーバー自身が(明示的に無視しない限り)シグナルかstdin EOFのどちらかに応答するという、MCP実装として最低限まっとうな作り方をしていること。②<b>Node.jsホストプロセス自体が、クラッシュではなく正常な経路で終了すること</b>。①は多少雑な実装でも<code>uv run</code>自身の安全装置(H/I)や最終手段のSIGKILL(F)がカバーしてくれる。問題は②で、ここだけはSDK側にもOS側にも自動的な安全網が存在しない。</p>
+      <p>MCPサーバー自身がシグナルにもstdin EOFにも応答しない、最強に強情な実装だったとしても、<code>uv run</code>自身の安全装置(直接の親が死ねば約1秒で自滅)とCLIの最終手段(約5.5秒後のSIGKILL)、さらにホストプロセスがクラッシュした場合でもCLIが孤児化した状態から自分で片付けにいく経路まで、<b>何重かの安全網</b>が働いている。無期限にプロセスが残り続けるケースは、構造化ハーネスで検算した15通りのいずれでも観測されなかった。</p>
     </div>
     <ul>
-      <li><b>正常系の後始末を自分で書く必要はない。</b>正常終了・中断・サブエージェント経由・逐次/並列セッションのいずれでも、<code>query()</code>セッションが終わればMCPサーバーの子プロセスは1〜2秒以内にSDK側が終了させる。</li>
-      <li><b>多少行儀の悪いMCPサーバーでも、ほぼ大丈夫。</b>シグナルを無視するだけならstdin EOFが、それも無視するならCLIの最終手段(約5.8秒後のSIGKILL)が、さらにCLI自体が消えても<code>uv run</code>自身の安全装置(約1秒)が働く。<b>3重の安全網</b>があると言っていい。</li>
-      <li><b>本当に気をつけるべきはただ1点、ホストプロセスのクラッシュ耐性。</b>Node.jsプロセス自体が<code>kill -9</code>やOOM Killerなどで突然死すると、<code>claude</code> CLIプロセスは孤児として確実に残り、MCPサーバーもタイミング次第で残る。コンテナやsystemdなど、<b>プロセスグループ単位で確実に後始末する仕組みを持つプロセス監督者の下で動かす</b>ことが唯一の対策になる。</li>
+      <li><b>正常系の後始末を自分で書く必要はない。</b>正常終了・中断・サブエージェント経由のいずれでも、行儀の良いサーバーなら子プロセスは実質0秒で終了する。</li>
+      <li><b>多少行儀の悪いMCPサーバーでも、ほぼ大丈夫。</b>シグナルを無視するだけならstdin EOFが、それも無視するならCLIの最終手段(約5.5秒後のSIGKILL)が働く。</li>
+      <li><b><code>query()</code>が返ってきた直後に「MCPサーバーはもう消えた」と決めつけない。</b>CLIはターンの完了reportとMCP接続の後始末を並行して進めており、行儀の悪いサーバー相手だと後始末が数秒バックグラウンドで続いていることがある。</li>
+      <li><b>ブロッキングな長時間ツールは、親が死んでも自分では気づけない。</b><code>time.sleep()</code>のようにI/Oを一切行わない処理を実行中は、<code>uv</code>の安全装置があっても、その処理が終わるまで誰も異常に気づけない。死亡検知は「シグナル」ではなく「次にI/Oしようとするタイミング」で決まる。</li>
+      <li><b>ホストプロセス(Node.js)がクラッシュしても、CLIは自分で片付けにいく。</b>孤児化しても、進行中のターンを完了させ通常の後始末を済ませたうえで、長くて十数秒のうちに自分自身も終了する。「無期限に残り続ける」という初期の結論は観察時間不足による誤りだった——とはいえ、短命なコンテナやサーバーレス環境では、この十数秒すら惜しい場面もあるだろう。そこはプロセスグループ単位で確実に後始末する監督者を用意しておくと安心。</li>
       <li><b>状態はセッション(=1回のquery())をまたいで残らない。</b>stdio transportである以上、これは実装の都合ではなく仕様上の必然。複数ターンにまたがる状態を持たせたいなら、MCPサーバー自体をStreamable HTTPの長命プロセスとして設計し直す必要がある。</li>
-      <li><b>公式ドキュメントは「粒度」までしか教えてくれない。</b>「1 query() = 1 subprocess」という設計思想は文書化されているが、シグナルの種類・タイミング・異常系での挙動は今回のように自前のシグナルハンドラとプロセスツリー観察で確かめるほかなかった。</li>
+      <li><b>公式ドキュメントは「粒度」までしか教えてくれない。</b>「1 query() = 1 subprocess」という設計思想は文書化されているが、シグナルの種類・タイミング・異常系での挙動は今回のように自前のシグナルハンドラとプロセスツリー観察、そして構造化ハーネスによる検算でしか確かめられなかった。</li>
     </ul>
   </section>
 </div>
 
 <footer>
   <div class="prose">
-    <p class="mono">検証一式(Pythonサーバー・TypeScriptクライアント・実測ログ・本レポートの元記事)は検証用リポジトリ <span class="mono">gekko_0</span> にコミット済み。SSE/HTTP型MCPサーバーでの挙動、およびシグナルとstdin EOFの両方に加えて更にOSレベルの異常(D状態でのハング等)まで無視するサーバーの挙動は本検証の対象外。</p>
+    <p class="mono">検証一式(Pythonサーバー・TypeScriptの構造化ハーネス・実測ログ・本レポートの元記事)は検証用リポジトリ <span class="mono">gekko_0</span> にコミット済み(<span class="mono">tsclient/README.md</span>に再現手順)。SSE/HTTP型MCPサーバーでの挙動、および<code>interrupt</code>/<code>subagent</code>/逐次・並列セッションと<code>kill-cli</code>/<code>kill-node</code>の組み合わせ(計10セル、既に検証した独立要因の組み合わせと判断し対象外)、OSレベルの異常(D状態でのハング等)まで無視するサーバーの挙動は本検証の対象外。</p>
   </div>
 </footer>
