@@ -17,20 +17,50 @@ export function forceKill(pid: number): void {
   }
 }
 
-/** claude CLIバイナリ(SDK同梱のプラットフォーム別実行ファイル)にマッチする全PIDを返す。
- * 呼び出し側で「マッチが複数ある/ゼロ」を明示的に扱えるようにするため、
- * 曖昧な先頭1件選択はここでは行わない。 */
-export function findClaudeCliPids(): number[] {
-  try {
-    const out = execFileSync("pgrep", ["-f", "claude-agent-sdk-.*/claude"], { encoding: "utf8" });
-    return out
-      .trim()
-      .split("\n")
-      .filter(Boolean)
-      .map(Number);
-  } catch {
-    return []; // pgrepはマッチなしでexit code 1になる
+/** システム上の全プロセスの (pid, ppid, cmd) を読む。 */
+function listAllProcesses(): Array<{ pid: number; ppid: number; cmd: string }> {
+  const out = execFileSync("ps", ["-eo", "pid=,ppid=,cmd="], { encoding: "utf8" });
+  return out
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => {
+      const m = line.match(/^\s*(\d+)\s+(\d+)\s+(.*)$/);
+      if (!m) return null;
+      return { pid: Number(m[1]), ppid: Number(m[2]), cmd: m[3] };
+    })
+    .filter((x): x is { pid: number; ppid: number; cmd: string } => x !== null);
+}
+
+/** rootPidの子孫プロセス(rootPid自身は含まない)を全て返す。
+ * システム全体からのcmdline一致検索(pgrep -f)は、この環境のように他のセッションが
+ * 同名バイナリを動かしていることがあるため、無関係なプロセスを誤って拾う危険がある。
+ * 必ずこの関数でプロセスツリーをたどり、対象を自分が起動した子孫に限定すること。 */
+export function findDescendantPids(rootPid: number): Array<{ pid: number; ppid: number; cmd: string }> {
+  const all = listAllProcesses();
+  const byPpid = new Map<number, Array<{ pid: number; ppid: number; cmd: string }>>();
+  for (const p of all) {
+    if (!byPpid.has(p.ppid)) byPpid.set(p.ppid, []);
+    byPpid.get(p.ppid)!.push(p);
   }
+  const result: Array<{ pid: number; ppid: number; cmd: string }> = [];
+  const stack = [rootPid];
+  while (stack.length > 0) {
+    const pid = stack.pop()!;
+    const children = byPpid.get(pid) ?? [];
+    for (const c of children) {
+      result.push(c);
+      stack.push(c.pid);
+    }
+  }
+  return result;
+}
+
+/** rootPidの子孫の中から、claude CLIバイナリ(SDK同梱のプラットフォーム別実行ファイル)に
+ * マッチするPIDを返す。rootPidは自分がspawnしたinnerSessionのpidを渡すこと。 */
+export function findClaudeCliPidsUnder(rootPid: number): number[] {
+  return findDescendantPids(rootPid)
+    .filter((p) => /claude-agent-sdk-.*\/claude\b/.test(p.cmd))
+    .map((p) => p.pid);
 }
 
 export function cmdlineOf(pid: number): string {

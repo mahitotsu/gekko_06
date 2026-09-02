@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import { ALL_BEHAVIORS, ALL_TRIGGERS, type ScenarioResult, type Trigger, type ServerBehavior } from "./src/types";
 import { RUN_DIR, RESULTS_DIR, OBSERVE_WINDOW_MS, SERVER_READY_TIMEOUT_MS, WORK_SECONDS } from "./src/constants";
-import { waitFor, findClaudeCliPids, forceKill, isAlive, cmdlineOf } from "./src/processUtils";
+import { waitFor, findClaudeCliPidsUnder, forceKill, isAlive, cmdlineOf } from "./src/processUtils";
 import { waitForEvent, readEvents } from "./src/eventsLog";
 import { trackLiveness } from "./src/liveness";
 
@@ -73,18 +73,20 @@ async function main() {
     const workStarted = await waitForEvent(eventsLog, "work_started", SERVER_READY_TIMEOUT_MS + WORK_SECONDS * 1000);
     if (!workStarted) notes.push("work_started event not observed before timeout");
 
-    const cliCandidates = findClaudeCliPids();
+    // 必ず innerPid の子孫からのみ探す(pgrepのようなシステム全体検索は、他セッションが
+    // 同名バイナリを動かしている場合に無関係なプロセスを誤ってkillする危険がある)。
+    const cliCandidates = findClaudeCliPidsUnder(innerPid);
     if (cliCandidates.length !== 1) {
-      notes.push(`expected exactly 1 claude CLI process, found ${cliCandidates.length}: [${cliCandidates.join(",")}]`);
-    }
-    cliPidAtTrigger = cliCandidates[0] ?? null;
-    if (cliPidAtTrigger !== null) {
+      // 候補が0件または複数件のときは、無関係なプロセスを誤ってkillしないよう、
+      // killを見送って notes に記録するだけにする(安全側に倒す)。
+      notes.push(`expected exactly 1 claude CLI process under innerPid=${innerPid}, found ${cliCandidates.length}: [${cliCandidates.join(",")}] — skipped kill`);
+    } else {
+      cliPidAtTrigger = cliCandidates[0];
       console.log(`[${scenarioId}] CLI candidate pid=${cliPidAtTrigger} cmdline=${cmdlineOf(cliPidAtTrigger).slice(0, 120)}...`);
     }
 
     if (trigger === "kill-cli") {
       if (cliPidAtTrigger === null) {
-        notes.push("could not locate claude CLI pid");
         epochMs = Date.now();
       } else {
         epochMs = Date.now();
