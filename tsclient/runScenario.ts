@@ -1,10 +1,15 @@
 // 1つの (Trigger, ServerBehavior) の組み合わせを実行する唯一のエントリポイント。
-// 全シナリオが同じ手順(起動待ち→トリガー適用→固定時間の生死観測→結果書き出し)を通る。
+// 全シナリオが同じ手順(起動待ち→CLI PID特定→トリガー適用→固定時間の生死観測→結果書き出し)を通る。
 //
 // usage: npx tsx runScenario.ts --trigger=<T> --behavior=<B> [--rep=<N>]
 // --rep を指定すると、同じ組み合わせを複数回実行して統計を取るための
 // 反復インデックスとして扱い、結果ファイル名に __rep<N> を付与する
 // (指定しない場合は従来通りの単発実行としてrepなしのファイル名を使う)。
+//
+// CLIプロセスのPIDは、トリガーの種類に関わらず全シナリオで work_started イベントの
+// タイミングに特定し、生死追跡もサーバーと同じ手順で行う(kill-cli/kill-nodeのように
+// 直接killする場合はもちろん、normal-completion/interrupt/subagentのように
+// 何もしない場合でも、CLIプロセス自身がいつ終了するかを同じ精度で観測する)。
 import { spawn, type ChildProcess } from "node:child_process";
 import { mkdirSync, rmSync, writeFileSync, existsSync, readFileSync } from "node:fs";
 import path from "node:path";
@@ -70,54 +75,52 @@ async function main() {
   const serverPid = serverReady ? Number(readFileSync(pidFile, "utf8").trim()) : null;
   console.log(`[${scenarioId}] server ready pid=${serverPid}`);
 
-  let epochMs: number;
-  let cliPidAtTrigger: number | null = null;
+  // 全トリガー共通: work_started の時点でCLIのPIDを特定する。この時点ではCLIは
+  // 必ずツール呼び出し中で生きているはずなので、生死追跡の起点として使える。
+  const workStarted = await waitForEvent(eventsLog, "work_started", SERVER_READY_TIMEOUT_MS + WORK_SECONDS * 1000);
+  if (!workStarted) notes.push("work_started event not observed before timeout");
 
-  if (trigger === "kill-cli" || trigger === "kill-node") {
-    const workStarted = await waitForEvent(eventsLog, "work_started", SERVER_READY_TIMEOUT_MS + WORK_SECONDS * 1000);
-    if (!workStarted) notes.push("work_started event not observed before timeout");
-
-    // 必ず innerPid の子孫からのみ探す(pgrepのようなシステム全体検索は、他セッションが
-    // 同名バイナリを動かしている場合に無関係なプロセスを誤ってkillする危険がある)。
-    const cliCandidates = findClaudeCliPidsUnder(innerPid);
-    if (cliCandidates.length !== 1) {
-      // 候補が0件または複数件のときは、無関係なプロセスを誤ってkillしないよう、
-      // killを見送って notes に記録するだけにする(安全側に倒す)。
-      notes.push(`expected exactly 1 claude CLI process under innerPid=${innerPid}, found ${cliCandidates.length}: [${cliCandidates.join(",")}] — skipped kill`);
-    } else {
-      cliPidAtTrigger = cliCandidates[0];
-      console.log(`[${scenarioId}] CLI candidate pid=${cliPidAtTrigger} cmdline=${cmdlineOf(cliPidAtTrigger).slice(0, 120)}...`);
-    }
-
-    if (trigger === "kill-cli") {
-      if (cliPidAtTrigger === null) {
-        epochMs = Date.now();
-      } else {
-        epochMs = Date.now();
-        forceKill(cliPidAtTrigger);
-        console.log(`[${scenarioId}] killed CLI pid=${cliPidAtTrigger} at t=${epochMs}`);
-      }
-    } else {
-      epochMs = Date.now();
-      forceKill(innerPid);
-      console.log(`[${scenarioId}] killed inner Node pid=${innerPid} at t=${epochMs}`);
-    }
+  // 必ず innerPid の子孫からのみ探す(pgrepのようなシステム全体検索は、他セッションが
+  // 同名バイナリを動かしている場合に無関係なプロセスを誤って対象にする危険がある)。
+  const cliCandidates = findClaudeCliPidsUnder(innerPid);
+  let cliPid: number | null = null;
+  if (cliCandidates.length !== 1) {
+    notes.push(`expected exactly 1 claude CLI process under innerPid=${innerPid}, found ${cliCandidates.length}: [${cliCandidates.join(",")}]`);
   } else {
-    // normal-completion / interrupt / subagent: innerSession自身が自然に終了するのを待つ
+    cliPid = cliCandidates[0];
+    console.log(`[${scenarioId}] CLI candidate pid=${cliPid} cmdline=${cmdlineOf(cliPid).slice(0, 120)}...`);
+  }
+
+  let epochMs: number;
+
+  if (trigger === "kill-cli") {
+    epochMs = Date.now();
+    if (cliPid !== null) {
+      forceKill(cliPid);
+      console.log(`[${scenarioId}] killed CLI pid=${cliPid} at t=${epochMs}`);
+    }
+  } else if (trigger === "kill-node") {
+    epochMs = Date.now();
+    forceKill(innerPid);
+    console.log(`[${scenarioId}] killed inner Node pid=${innerPid} at t=${epochMs}`);
+  } else {
+    // normal-completion / interrupt / subagent: innerSession自身が自然に終了するのを待つ。
+    // このときcliPidは既に特定済みなので、自然終了に至るまでのCLI自身の生死も
+    // kill-cli/kill-nodeと同じ精度で追跡できる。
     await innerExited;
     epochMs = Date.now();
     console.log(`[${scenarioId}] inner session exited naturally at t=${epochMs}`);
   }
 
-  // ここから固定の観測窓。サーバー(と該当すればCLI)の生死を同じ実装で追跡する。
+  // ここから固定の観測窓。サーバーとCLI、両方の生死を全トリガーで同じ実装で追跡する。
   const [serverOutcome, cliOutcome] = await Promise.all([
     trackLiveness(serverPid, OBSERVE_WINDOW_MS, epochMs),
-    cliPidAtTrigger !== null ? trackLiveness(cliPidAtTrigger, OBSERVE_WINDOW_MS, epochMs) : Promise.resolve(null),
+    trackLiveness(cliPid, OBSERVE_WINDOW_MS, epochMs),
   ]);
 
   // 安全のための後片付け(観測結果には影響しない、観測終了後の処理)
   if (serverOutcome.pid !== null && isAlive(serverOutcome.pid)) forceKill(serverOutcome.pid);
-  if (cliPidAtTrigger !== null && isAlive(cliPidAtTrigger)) forceKill(cliPidAtTrigger);
+  if (cliPid !== null && isAlive(cliPid)) forceKill(cliPid);
   if (isAlive(innerPid)) forceKill(innerPid);
 
   const result: ScenarioResult = {
@@ -133,7 +136,7 @@ async function main() {
 
   writeFileSync(path.join(RESULTS_DIR, `${scenarioId}.json`), JSON.stringify(result, null, 2));
   console.log(
-    `[${scenarioId}] DONE server_died_at_ms=${serverOutcome.diedAtMs} cli_died_at_ms=${cliOutcome?.diedAtMs ?? "n/a"}`
+    `[${scenarioId}] DONE server_died_at_ms=${serverOutcome.diedAtMs} cli_died_at_ms=${cliOutcome.diedAtMs}`
   );
 }
 

@@ -63,12 +63,14 @@ function main() {
     const serverNeverDied = results.filter((r) => r.server.diedAtMs === null).length;
     const serverStats = computeStats(serverDied, serverNeverDied);
 
-    const hasCli = results.some((r) => r.cli !== null);
-    let cliStats: Stats | null = null;
-    if (hasCli) {
-      const cliDied = results.map((r) => r.cli?.diedAtMs ?? null).filter((v): v is number => v !== null);
-      const cliNeverDied = results.filter((r) => r.cli !== null && r.cli.diedAtMs === null).length;
-      cliStats = computeStats(cliDied, cliNeverDied);
+    // cli.pidがnullなのは、work_started時点でCLI候補が1つに定まらなかった実行のみ。
+    // そうした回はサンプルから除外する(死んだとも生きているとも言えないため)。
+    const cliFound = results.filter((r) => r.cli.pid !== null);
+    const cliDied = cliFound.map((r) => r.cli.diedAtMs).filter((v): v is number => v !== null);
+    const cliNeverDied = cliFound.filter((r) => r.cli.diedAtMs === null).length;
+    const cliStats: Stats | null = cliFound.length > 0 ? computeStats(cliDied, cliNeverDied) : null;
+    if (cliFound.length < results.length) {
+      console.log(`  note: ${trigger}×${behavior} — CLI PID未特定のため${results.length - cliFound.length}件をcli統計から除外`);
     }
 
     summary.push({ trigger, behavior, server: serverStats, cli: cliStats });

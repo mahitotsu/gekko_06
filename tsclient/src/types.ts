@@ -49,8 +49,9 @@ export interface ScenarioResult {
   finishedAt: string;
   /** サーバー(python3)の生死追跡。 */
   server: ProcessOutcome;
-  /** CLI(claudeバイナリ)の生死追跡。kill-cli/kill-nodeのみ意味を持つ(それ以外はnull)。 */
-  cli: ProcessOutcome | null;
+  /** CLI(claudeバイナリ)の生死追跡。全トリガー共通でwork_started時点のPIDから追跡する。
+   * pidがnullなのは、その時点でCLI候補プロセスが1つに定まらなかった場合のみ。 */
+  cli: ProcessOutcome;
   /** サーバー自身が書いた構造化イベントログの中身(あれば)。 */
   serverEvents: ServerEvent[];
   notes: string[];

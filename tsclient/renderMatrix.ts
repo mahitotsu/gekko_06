@@ -18,7 +18,11 @@ function main() {
   const rows = results.map((r) => {
     const serverStatus = r.server.diedAtMs !== null ? `死亡 (+${fmtMs(r.server.diedAtMs)})` : `生存(観測終了時点)`;
     const cliStatus =
-      r.cli === null ? "n/a" : r.cli.diedAtMs !== null ? `死亡 (+${fmtMs(r.cli.diedAtMs)})` : `生存(観測終了時点)`;
+      r.cli.pid === null
+        ? "n/a(CLI特定失敗)"
+        : r.cli.diedAtMs !== null
+          ? `死亡 (+${fmtMs(r.cli.diedAtMs)})`
+          : `生存(観測終了時点)`;
     const notes = r.notes.length ? ` ⚠️${r.notes.join("; ")}` : "";
     return `| ${r.trigger} | ${r.behavior} | ${serverStatus} | ${cliStatus} |${notes}`;
   });
