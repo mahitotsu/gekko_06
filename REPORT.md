@@ -1,7 +1,7 @@
 # Claude Agent SDK (TypeScript) — stdio MCPサーバー(`uv run`)の子プロセス終了検証
 
 > このMarkdown版は構造化ハーネスの実行結果を中心にまとめた作業記録です。読み物としての
-> 最終版は [report.html](report.html) を参照してください。
+> 最終版は [zenn-article.md](zenn-article.md) を参照してください。
 
 ## 検証環境
 
