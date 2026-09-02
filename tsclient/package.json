@@ -1,9 +1,13 @@
 {
   "name": "tsclient",
   "version": "1.0.0",
-  "description": "",
+  "description": "MCPサーバー(stdio)子プロセスのライフサイクル検証ハーネス",
   "main": "index.js",
   "scripts": {
+    "matrix": "tsx runMatrix.ts",
+    "matrix:one": "tsx runScenario.ts",
+    "topology": "tsx runTopology.ts",
+    "render": "tsx renderMatrix.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

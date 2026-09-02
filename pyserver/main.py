@@ -1,55 +1,72 @@
+"""検証用MCPサーバー(最小構成)。
+
+ツールは `work(seconds)` の1つだけ。呼ばれた瞬間と完了した瞬間を
+構造化イベントログに記録するので、外部のハーネスは「ツール呼び出しが
+今まさに実行中か」を sleep による当てずっぽうではなくイベント監視で
+正確に同期できる。
+
+サーバーの「行儀」は MCPVERIFY_BEHAVIOR 環境変数の1つだけで切り替える
+(検証対象の軸を単一の入力に閉じ込め、他のコードパスを分岐させない):
+
+  normal                行儀の良いサーバー。SIGTERM/SIGINT/SIGHUPに素直に応答して終了する。
+  ignore-signals        シグナルは全て無視する。stdin EOFには応答する(mcp.run()の自然returnに任せる)。
+  ignore-signals-and-eof  シグナルもstdin EOFも無視し、mcp.run()が返っても再突入し続けて居座ろうとする。
+"""
+
 import os
 import signal
 import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Literal
 
 from mcp.server.fastmcp import FastMCP
 
+Behavior = Literal["normal", "ignore-signals", "ignore-signals-and-eof"]
+
 PID_FILE = Path(os.environ.get("MCPVERIFY_PID_FILE", "/home/akring/gekko_0/run/server.pid"))
-# 親(SDK/CLI)から見えない、サーバー自身が独立に書く終了要因ログ。
-# 「何によって終了させられたか」を外部から推測せず実測するためのもの。
-SHUTDOWN_LOG = Path(os.environ.get("MCPVERIFY_SHUTDOWN_LOG", "/home/akring/gekko_0/run/server-shutdown-cause.log"))
+EVENTS_LOG = Path(os.environ.get("MCPVERIFY_EVENTS_LOG", "/home/akring/gekko_0/run/server-events.jsonl"))
+BEHAVIOR: Behavior = os.environ.get("MCPVERIFY_BEHAVIOR", "normal")  # type: ignore[assignment]
+
+pid = os.getpid()
 
 
-def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
-
-
-# ログはすべてstderrへ(stdoutはJSON-RPC用に空けておく)
 def log(msg: str) -> None:
-    print(f"[mcpverify-server] {msg}", file=sys.stderr, flush=True)
+    # stdoutはJSON-RPC専用に空けておく。人間向けの生ログはstderrへ。
+    print(f"[mcpverify-server pid={pid}] {msg}", file=sys.stderr, flush=True)
 
 
-def record_cause(cause: str) -> None:
-    with SHUTDOWN_LOG.open("a") as f:
-        f.write(f"{_now()} pid={pid} {cause}\n")
+def emit(event: str, **fields: object) -> None:
+    """外部ハーネスが監視する、構造化(JSONL)の唯一の記録経路。"""
+    import json
 
-
-# テスト用: 環境変数 MCPVERIFY_IGNORE_SIGNALS=1 のとき、SIGTERM/SIGINT/SIGHUPを
-# 「行儀の悪いMCPサーバー」として無視する(SIGKILLへのエスカレーションを観察するため)。
-IGNORE_SIGNALS = os.environ.get("MCPVERIFY_IGNORE_SIGNALS") == "1"
+    record = {
+        "ts": datetime.now(timezone.utc).isoformat(),
+        "pid": pid,
+        "event": event,
+        **fields,
+    }
+    with EVENTS_LOG.open("a") as f:
+        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+    log(f"event={event} {fields}")
 
 
 def make_signal_handler(sig_name: str):
     def handler(signum, frame):
-        if IGNORE_SIGNALS:
-            record_cause(f"SIGNAL_RECEIVED_BUT_IGNORED signal={sig_name}({signum})")
-            log(f"received signal {sig_name}({signum}) but IGNORING it (stubborn test mode)")
+        if BEHAVIOR in ("ignore-signals", "ignore-signals-and-eof"):
+            emit("signal_ignored", signal=sig_name, signum=signum)
             return
-        record_cause(f"SIGNAL_RECEIVED signal={sig_name}({signum})")
-        log(f"received signal {sig_name}({signum}), exiting")
-        # デフォルトの終了動作を模して、シグナル起因の終了コードでプロセスを終了する
+        emit("signal_received", signal=sig_name, signum=signum)
         sys.exit(128 + signum)
 
     return handler
 
 
-pid = os.getpid()
+PID_FILE.parent.mkdir(parents=True, exist_ok=True)
+EVENTS_LOG.parent.mkdir(parents=True, exist_ok=True)
 PID_FILE.write_text(str(pid))
-log(f"starting up, pid={pid}, pid file written to {PID_FILE}")
-record_cause("STARTED")
+emit("started", behavior=BEHAVIOR, pid_file=str(PID_FILE))
 
 for _sig, _name in [(signal.SIGTERM, "SIGTERM"), (signal.SIGINT, "SIGINT"), (signal.SIGHUP, "SIGHUP")]:
     signal.signal(_sig, make_signal_handler(_name))
@@ -58,54 +75,51 @@ mcp = FastMCP("mcpverify-server")
 
 
 @mcp.tool()
-def echo(text: str) -> str:
-    """Echo back the given text (for verification purposes)."""
-    log(f"echo tool called with text={text!r}")
-    return f"echo: {text}"
+def work(seconds: float = 0.0, label: str = "") -> str:
+    """指定秒数だけ処理する(sleepで模擬する)唯一の検証用ツール。
+
+    全シナリオがこの1つのツールだけを呼ぶ。呼ばれた瞬間に work_started を、
+    完了した瞬間に work_finished を記録するので、外部から「今まさに実行中か」
+    を正確に検知できる。
+    """
+    emit("work_started", seconds=seconds, label=label)
+    if seconds > 0:
+        time.sleep(seconds)
+    emit("work_finished", seconds=seconds, label=label)
+    return f"work done: seconds={seconds} label={label!r}"
 
 
-@mcp.tool()
-def slow_echo(text: str, delay_seconds: float = 20.0) -> str:
-    """Echo back the given text, but sleep first (for interrupt/abort verification)."""
-    log(f"slow_echo tool called with text={text!r}, sleeping {delay_seconds}s")
-    for i in range(int(delay_seconds)):
-        time.sleep(1)
-        log(f"slow_echo still sleeping... {i + 1}/{int(delay_seconds)}s")
-    log("slow_echo done sleeping, returning result")
-    return f"echo(slow): {text}"
+def _run_normal() -> None:
+    try:
+        mcp.run(transport="stdio")
+        emit("run_returned_naturally")
+    except SystemExit as e:
+        emit("system_exit", code=e.code)
+        raise
+    except BaseException as e:
+        emit("exception", type=type(e).__name__, message=str(e))
+        raise
+    finally:
+        emit("process_exiting")
 
 
-# テスト用: 環境変数 MCPVERIFY_NEVER_EXIT=1 のとき、シグナルだけでなくstdinのEOF
-# (mcp.run()の自然なリターン)も無視し、居座り続ける「最強に強情なサーバー」を再現する。
-# SIGKILL以外で終了できるかどうかを確認するためのモード。
-NEVER_EXIT = os.environ.get("MCPVERIFY_NEVER_EXIT") == "1"
-
-if __name__ == "__main__":
-    if NEVER_EXIT:
-        loop_count = 0
-        while True:
-            loop_count += 1
-            try:
-                mcp.run(transport="stdio")
-                record_cause(f"RUN_RETURNED_NATURALLY_BUT_NEVER_EXIT loop={loop_count}")
-            except SystemExit as e:
-                record_cause(f"SYSTEM_EXIT_SUPPRESSED code={e.code} loop={loop_count}")
-            except BaseException as e:
-                record_cause(f"EXCEPTION_SUPPRESSED type={type(e).__name__} loop={loop_count}")
-            log(f"mcp.run() returned/raised but NEVER_EXIT mode: staying alive (loop={loop_count})")
-            time.sleep(1)  # stdinが閉じた後の高速ループでCPUを使い切らないようにする
-    else:
+def _run_never_exit() -> None:
+    """stdin EOFすら無視し、mcp.run()が返ってもひたすら再突入し続ける。"""
+    loop = 0
+    while True:
+        loop += 1
         try:
             mcp.run(transport="stdio")
-            # ここに到達したのは mcp.run() が例外なく"自然に"リターンした場合。
-            # シグナルハンドラは sys.exit() で抜けるためここには来ない。
-            record_cause("MCP_RUN_RETURNED_NATURALLY (likely stdin EOF/close detected internally)")
+            emit("run_returned_but_staying_alive", loop=loop)
         except SystemExit as e:
-            record_cause(f"SYSTEM_EXIT code={e.code}")
-            raise
+            emit("system_exit_suppressed", code=e.code, loop=loop)
         except BaseException as e:
-            record_cause(f"EXCEPTION type={type(e).__name__} msg={e!r}")
-            raise
-        finally:
-            log(f"shutting down, pid={pid}")
-            record_cause("PROCESS_EXITING")
+            emit("exception_suppressed", type=type(e).__name__, loop=loop)
+        time.sleep(1)
+
+
+if __name__ == "__main__":
+    if BEHAVIOR == "ignore-signals-and-eof":
+        _run_never_exit()
+    else:
+        _run_normal()
