@@ -1,0 +1,77 @@
+{
+  "trigger": "subagent",
+  "behavior": "normal",
+  "triggerAt": "2026-09-03T15:36:36.546Z",
+  "finishedAt": "2026-09-03T15:36:36.546Z",
+  "server": {
+    "pid": 281338,
+    "samples": [
+      {
+        "atMs": 0,
+        "alive": false
+      }
+    ],
+    "diedAtMs": 0,
+    "aliveAtWindowEnd": false
+  },
+  "cli": {
+    "pid": 281289,
+    "samples": [
+      {
+        "atMs": 0,
+        "alive": false
+      }
+    ],
+    "diedAtMs": 0,
+    "aliveAtWindowEnd": false
+  },
+  "serverEvents": [
+    {
+      "ts": "2026-09-03T15:36:18.020757+00:00",
+      "pid": 281338,
+      "event": "started",
+      "behavior": "normal",
+      "pid_file": "/home/akring/gekko_0/run/subagent__normal__rep17/server.pid"
+    },
+    {
+      "ts": "2026-09-03T15:36:23.792658+00:00",
+      "pid": 281338,
+      "event": "work_started",
+      "seconds": 6,
+      "label": "scenario"
+    },
+    {
+      "ts": "2026-09-03T15:36:29.793075+00:00",
+      "pid": 281338,
+      "event": "work_finished",
+      "seconds": 6,
+      "label": "scenario"
+    },
+    {
+      "ts": "2026-09-03T15:36:35.230092+00:00",
+      "pid": 281338,
+      "event": "signal_received",
+      "signal": "SIGINT",
+      "signum": 2
+    },
+    {
+      "ts": "2026-09-03T15:36:35.230556+00:00",
+      "pid": 281338,
+      "event": "signal_received",
+      "signal": "SIGTERM",
+      "signum": 15
+    },
+    {
+      "ts": "2026-09-03T15:36:35.875854+00:00",
+      "pid": 281338,
+      "event": "system_exit",
+      "code": 130
+    },
+    {
+      "ts": "2026-09-03T15:36:35.876014+00:00",
+      "pid": 281338,
+      "event": "process_exiting"
+    }
+  ],
+  "notes": []
+}

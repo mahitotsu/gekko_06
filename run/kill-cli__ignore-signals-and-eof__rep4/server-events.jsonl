@@ -1,0 +1,4 @@
+{"ts": "2026-09-03T14:45:53.700984+00:00", "pid": 240452, "event": "started", "behavior": "ignore-signals-and-eof", "pid_file": "/home/akring/gekko_0/run/kill-cli__ignore-signals-and-eof__rep4/server.pid"}
+{"ts": "2026-09-03T14:45:57.790156+00:00", "pid": 240452, "event": "work_started", "seconds": 6.0, "label": "scenario"}
+{"ts": "2026-09-03T14:46:03.790409+00:00", "pid": 240452, "event": "work_finished", "seconds": 6.0, "label": "scenario"}
+{"ts": "2026-09-03T14:46:03.792575+00:00", "pid": 240452, "event": "exception_suppressed", "type": "ExceptionGroup", "loop": 1}

@@ -1,0 +1,97 @@
+{
+  "trigger": "interrupt",
+  "behavior": "ignore-signals-and-eof",
+  "triggerAt": "2026-09-03T15:48:09.256Z",
+  "finishedAt": "2026-09-03T15:48:10.460Z",
+  "server": {
+    "pid": 290913,
+    "samples": [
+      {
+        "atMs": 0,
+        "alive": true
+      },
+      {
+        "atMs": 201,
+        "alive": true
+      },
+      {
+        "atMs": 402,
+        "alive": true
+      },
+      {
+        "atMs": 602,
+        "alive": true
+      },
+      {
+        "atMs": 803,
+        "alive": true
+      },
+      {
+        "atMs": 1003,
+        "alive": true
+      },
+      {
+        "atMs": 1204,
+        "alive": false
+      }
+    ],
+    "diedAtMs": 1204,
+    "aliveAtWindowEnd": false
+  },
+  "cli": {
+    "pid": 290848,
+    "samples": [
+      {
+        "atMs": 0,
+        "alive": false
+      }
+    ],
+    "diedAtMs": 0,
+    "aliveAtWindowEnd": false
+  },
+  "serverEvents": [
+    {
+      "ts": "2026-09-03T15:47:59.033138+00:00",
+      "pid": 290913,
+      "event": "started",
+      "behavior": "ignore-signals-and-eof",
+      "pid_file": "/home/akring/gekko_0/run/interrupt__ignore-signals-and-eof__rep20/server.pid"
+    },
+    {
+      "ts": "2026-09-03T15:48:04.153864+00:00",
+      "pid": 290913,
+      "event": "work_started",
+      "seconds": 6,
+      "label": "scenario"
+    },
+    {
+      "ts": "2026-09-03T15:48:04.392221+00:00",
+      "pid": 290913,
+      "event": "signal_ignored",
+      "signal": "SIGINT",
+      "signum": 2
+    },
+    {
+      "ts": "2026-09-03T15:48:04.392407+00:00",
+      "pid": 290913,
+      "event": "signal_ignored",
+      "signal": "SIGTERM",
+      "signum": 15
+    },
+    {
+      "ts": "2026-09-03T15:48:10.154346+00:00",
+      "pid": 290913,
+      "event": "work_finished",
+      "seconds": 6,
+      "label": "scenario"
+    },
+    {
+      "ts": "2026-09-03T15:48:10.157478+00:00",
+      "pid": 290913,
+      "event": "exception_suppressed",
+      "type": "ExceptionGroup",
+      "loop": 1
+    }
+  ],
+  "notes": []
+}

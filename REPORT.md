@@ -36,33 +36,35 @@ permissionMode等)は `tsclient/src/constants.ts` に一箇所だけ定義し、
 同期も「sleep(N)による当てずっぽう」をやめ、MCPサーバー自身が書く構造化JSONLイベントログ
 (`work_started`/`work_finished`/`signal_received`/...)を監視するイベント駆動方式にした。
 
-## 結果: Trigger × ServerBehavior フルマトリクス(15/15、実測)
+## 結果: Trigger × ServerBehavior フルマトリクス(15/15、各セル20回試行)
 
-`npx tsx runMatrix.ts` で全組み合わせを逐次実行し、`npx tsx renderMatrix.ts` で
-`results/*.json` から機械的に生成した表(手書きではない):
+`npx tsx runMatrix.ts --repeats=20` で全15組み合わせ×20回(合計300回)を実行し、
+`npx tsx aggregateResults.ts` で `results/*__rep\d+.json` から機械的に集計した表(手書きではない)。
+値は「トリガー発火の瞬間を0秒とした経過時間」の平均・標準偏差(σ)・中央値、n=20(いずれのセルも
+サーバー・CLIともPID特定に失敗したサンプルはなく、除外なしでn=20)。CLIプロセスの生死は、
+全トリガー共通で`work_started`イベント時点のPIDから追跡している(以前のバージョンは
+kill-cli/kill-nodeでしか追跡しておらず、それ以外はn/a表記だった。この制約は解消済み):
 
 | trigger | behavior | server(MCPサーバー) | cli(claudeプロセス) |
 |---|---|---|---|
-| normal-completion | normal | 死亡 (+0.00s) | n/a |
-| normal-completion | ignore-signals | 死亡 (+0.00s) | n/a |
-| normal-completion | ignore-signals-and-eof | 死亡 (+0.85s) | n/a |
-| interrupt | normal | 死亡 (+0.00s) | n/a |
-| interrupt | ignore-signals | 死亡 (+1.04s) | n/a |
-| interrupt | ignore-signals-and-eof | 死亡 (+1.04s) | n/a |
-| subagent | normal | 死亡 (+0.00s) | n/a |
-| subagent | ignore-signals | 死亡 (+0.00s) | n/a |
-| subagent | ignore-signals-and-eof | 死亡 (+0.83s) | n/a |
-| kill-cli | normal | 死亡 (+6.19s) | 死亡 (+0.20s) |
-| kill-cli | ignore-signals | 死亡 (+6.15s) | 死亡 (+0.20s) |
-| kill-cli | ignore-signals-and-eof | 死亡 (+6.20s) | 死亡 (+0.20s) |
-| kill-node | normal | 死亡 (+8.56s) | 死亡 (+8.96s) |
-| kill-node | ignore-signals | 死亡 (+8.33s) | 死亡 (+8.74s) |
-| kill-node | ignore-signals-and-eof | 死亡 (+13.50s) | 死亡 (+12.65s) |
+| normal-completion | normal | 平均0.00s ± 0.00s (中央値0.00s) | 平均0.00s ± 0.00s (中央値0.00s) |
+| normal-completion | ignore-signals | 平均0.00s ± 0.00s (中央値0.00s) | 平均0.00s ± 0.00s (中央値0.00s) |
+| normal-completion | ignore-signals-and-eof | 平均0.78s ± 0.09s (中央値0.80s) | 平均0.00s ± 0.00s (中央値0.00s) |
+| interrupt | normal | 平均0.45s ± 0.57s (中央値0.00s) | 平均0.00s ± 0.00s (中央値0.00s) |
+| interrupt | ignore-signals | 平均1.09s ± 0.10s (中央値1.01s) | 平均0.00s ± 0.00s (中央値0.00s) |
+| interrupt | ignore-signals-and-eof | 平均1.08s ± 0.10s (中央値1.00s) | 平均0.00s ± 0.00s (中央値0.00s) |
+| subagent | normal | 平均0.00s ± 0.00s (中央値0.00s) | 平均0.00s ± 0.00s (中央値0.00s) |
+| subagent | ignore-signals | 平均0.00s ± 0.00s (中央値0.00s) | 平均0.00s ± 0.00s (中央値0.00s) |
+| subagent | ignore-signals-and-eof | 平均0.80s ± 0.01s (中央値0.80s) | 平均0.00s ± 0.00s (中央値0.00s) |
+| kill-cli | normal | 平均6.29s ± 0.33s (中央値6.21s) | 平均0.20s ± 0.00s (中央値0.20s) |
+| kill-cli | ignore-signals | 平均6.29s ± 0.33s (中央値6.21s) | 平均0.20s ± 0.00s (中央値0.20s) |
+| kill-cli | ignore-signals-and-eof | 平均6.21s ± 0.02s (中央値6.21s) | 平均0.20s ± 0.00s (中央値0.20s) |
+| kill-node | normal | 平均8.57s ± 0.30s (中央値8.52s) | 平均9.11s ± 0.27s (中央値9.06s) |
+| kill-node | ignore-signals | 平均8.26s ± 0.34s (中央値8.22s) | 平均8.80s ± 0.35s (中央値8.82s) |
+| kill-node | ignore-signals-and-eof | 平均13.42s ± 0.48s (中央値13.23s) | 平均12.68s ± 0.45s (中央値12.63s) |
 
-(cli列の「+N秒」はトリガー発火からの経過時間。kill-cli/kill-nodeの`cli`はkill対象そのものなので、
-死亡検知は「本当にkillできたか」の確認。normal-completion/interrupt/subagentではCLIの生死追跡自体を
-行っていない(トリガーがCLI外部からの操作ではないため)。全15シナリオで「CLI候補プロセスがちょうど
-1つ見つからなかった」という警告は0件——後述のバグ修正後は毎回正確に対象プロセスを特定できている。)
+(`interrupt × normal`の20回中20回のうち一部は0.00秒、一部は最大1.20秒かかっており、σ=0.57sと
+ばらつきが大きい。他の14セルはいずれもσが1秒未満に収まっている。)
 
 ### トポロジー確認(2軸とは別枠)
 
@@ -75,15 +77,24 @@ permissionMode等)は `tsclient/src/constants.ts` に一箇所だけ定義し、
 
 ## 主な発見
 
-### 1. 正常系(normal-completion / interrupt / subagent)は一貫して即座〜1秒程度で終了する
+### 1. `normal-completion`/`interrupt`/`subagent`は一貫して即座〜1秒程度で終了する。CLI自身も同様
 
-行儀の良いサーバー(`normal`)は全トリガーで実質0秒(次のポーリングサンプルで既に死亡)。
-シグナルを無視するだけの`ignore-signals`は、stdin EOFで自然終了するため大きな差はない
-(interruptトリガーのみ約1.0秒——中断処理そのものにかかる時間)。
+行儀の良いサーバー(`normal`)は、`normal-completion`/`subagent`では全20回とも実質0秒(次の
+ポーリングサンプルで既に死亡、σ=0.00s)。`interrupt`だけは平均0.45秒・σ=0.57sとばらつきがあり、
+0.00秒で終わる回と1.20秒かかる回が混在する。シグナルを無視するだけの`ignore-signals`は、
+stdin EOFで自然終了するため`normal-completion`/`subagent`では大きな差はないが、`interrupt`だけは
+平均約1.09秒かかる——`query.interrupt()`によるセッション終了がMCPサーバーの後始末の完了を
+待ちきらずに返っている可能性が高い。
+
+CLIプロセス自身の生死も、全トリガー共通で追跡できるようになった結果、`normal-completion`/
+`interrupt`/`subagent`のいずれでも、サーバーの行儀に関わらずCLIは20回とも実質0秒(σ=0.00s)で
+消えていた。`query()`のfor-awaitループが完了を返す時点で、CLIは既にOSプロセスとして存在しない
+ということになる。
 
 ### 2. `normal-completion × ignore-signals-and-eof`: 「query()完了」と「MCPサーバーの後始末完了」は別のタイミング
 
-表では0.85秒と、初期ドラフト(Pattern F、約5.8秒)よりずっと短く見えるが、これは矛盾ではなく
+表では`normal-completion`が平均0.78秒、`subagent`が平均0.80秒と、初期ドラフト(Pattern F、約5.8秒)
+よりずっと短く見えるが、これは矛盾ではなく
 **測定の基準点が違う**。イベントログを詳しく見ると、CLIは`work()`の結果を受け取った後、シグナルを
 送り(無視され)、無視されたシグナルへの対応(再試行ループの末の強制終了)を**バックグラウンドで
 続けながら**、ほぼ同時にターン自体を完了させて`query()`の結果を返している。つまり:
@@ -95,6 +106,9 @@ permissionMode等)は `tsclient/src/constants.ts` に一箇所だけ定義し、
 プロセスが消えるまで」は約1秒未満で済んでいるように見えるが、その裏では既にシグナル送信〜
 再試行〜強制終了のシーケンス(合計で約5.5秒)がバックグラウンドで進行しており、たまたま
 `query()`の完了タイミングがその終盤(強制終了の直前)と重なっていた、というのが実態である。
+`interrupt`だけはこの`ignore-signals-and-eof`でも平均1.08秒と、`ignore-signals`(平均1.09秒)と
+ほぼ同じ値だった。ここでも`interrupt`によるセッション終了がMCPサーバーの後始末の完了を待たずに
+返っている可能性が高い。
 
 **実務上の含意**: `for await (const msg of query())`のループが終わった直後に「MCPサーバーは
 もう存在しない」と仮定するのは、行儀の悪いサーバーの場合は安全ではない。数秒のバックグラウンド
@@ -102,7 +116,7 @@ permissionMode等)は `tsclient/src/constants.ts` に一箇所だけ定義し、
 
 ### 3. `kill-cli`: サーバーの死亡タイミングは「シグナル」ではなく「次にI/Oしようとするタイミング」で決まる
 
-3つの行儀すべてで、サーバーの死亡は**約6.15〜6.20秒後**とほぼ同一だった。これはワークツールの
+3つの行儀すべてで、サーバーの死亡は**平均6.2〜6.3秒後**(中央値はいずれも6.21秒)とほぼ同一だった。これはワークツールの
 呼び出し秒数(`WORK_SECONDS=6`)とほぼ一致する。イベントログを見ると、シグナルは一切送られておらず、
 サーバーは`work()`の`time.sleep(6)`をブロッキングのまま最後まで実行し、完了後に結果を書き込もうと
 した瞬間に壊れたパイプ(uvも道連れに死んでいる)を検知してクラッシュしている。
@@ -118,9 +132,9 @@ permissionMode等)は `tsclient/src/constants.ts` に一箇所だけ定義し、
 
 今回、全シナリオに一律90秒の観察窓を適用した結果:
 
-- `kill-node × normal` / `ignore-signals`: CLIは約**8.7〜9.0秒後**に自己終了
-- `kill-node × ignore-signals-and-eof`: CLIは約**12.7秒後**に自己終了(サーバー側のSIGKILL
-  エスカレーション待ちの分、通常より4〜5秒長い)
+- `kill-node × normal` / `ignore-signals`: CLIは平均**約8.8〜9.1秒後**に自己終了(σは0.3秒程度)
+- `kill-node × ignore-signals-and-eof`: CLIは平均**約12.7秒後**に自己終了(σ0.45秒。サーバー側の
+  SIGKILLエスカレーション待ちの分、通常より4〜5秒長い)
 
 CLIはホストプロセス(Node.js)が死んで孤児になっても、進行中のツール呼び出しが終わるのを待ち、
 通常のターン完了処理(MCPサーバーへのSIGINT/SIGTERM送信、応答がなければ最終的な強制終了)を
@@ -148,7 +162,7 @@ CLIはホストプロセス(Node.js)が死んで孤児になっても、進行�
 > 2. サーバーの終了を待つ。合理的な時間内に終了しなければ`SIGTERM`
 > 3. `SIGTERM`後も終了しなければ`SIGKILL`
 
-実測(正常系シナリオ)では、`SIGINT`と`SIGTERM`が1ミリ秒未満の差でほぼ同時に送られており、
+実測(`normal`のサーバーへ直接シグナルハンドラを仕込んだ計測)では、`SIGINT`と`SIGTERM`が1ミリ秒未満の差でほぼ同時に送られており、
 「様子見」の段階は観測されなかった。stdin EOFのクローズも(シグナルと)並行して行われているらしく、
 `ignore-signals`(シグナル無視、EOF応答)のケースでも問題なく終了できている。
 
@@ -180,9 +194,9 @@ CLIはホストプロセス(Node.js)が死んで孤児になっても、進行�
 
 ```bash
 cd tsclient
-npm run matrix              # 全15組み合わせを実行(所要時間: 約15〜20分)
-npm run topology              # セッション/プロセスの対応関係の確認
-npm run render                  # results/*.json から決定表(Markdown)を生成
+npx tsx runMatrix.ts --repeats=20   # 全15組み合わせ×20回、合計300回実行(所要時間: 約90分)
+npx tsx aggregateResults.ts         # results/*__rep*.json から平均・中央値・σを集計
+npm run topology                    # セッション/プロセスの対応関係の確認
 ```
 
 検証一式(Pythonサーバー・TypeScriptハーネス・実測ログ・本レポート)は本リポジトリにコミット済み。

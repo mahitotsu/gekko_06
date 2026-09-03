@@ -1,0 +1,7 @@
+{"ts": "2026-09-03T15:35:52.012297+00:00", "pid": 280949, "event": "started", "behavior": "ignore-signals", "pid_file": "/home/akring/gekko_0/run/interrupt__ignore-signals__rep17/server.pid"}
+{"ts": "2026-09-03T15:35:56.677462+00:00", "pid": 280949, "event": "work_started", "seconds": 6.0, "label": "scenario"}
+{"ts": "2026-09-03T15:35:56.900389+00:00", "pid": 280949, "event": "signal_ignored", "signal": "SIGINT", "signum": 2}
+{"ts": "2026-09-03T15:35:56.900572+00:00", "pid": 280949, "event": "signal_ignored", "signal": "SIGTERM", "signum": 15}
+{"ts": "2026-09-03T15:36:02.677759+00:00", "pid": 280949, "event": "work_finished", "seconds": 6.0, "label": "scenario"}
+{"ts": "2026-09-03T15:36:02.681050+00:00", "pid": 280949, "event": "exception", "type": "ExceptionGroup", "message": "unhandled errors in a TaskGroup (1 sub-exception)"}
+{"ts": "2026-09-03T15:36:02.681328+00:00", "pid": 280949, "event": "process_exiting"}

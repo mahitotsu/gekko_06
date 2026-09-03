@@ -1,0 +1,6 @@
+{"ts": "2026-09-03T15:09:58.907959+00:00", "pid": 260077, "event": "started", "behavior": "normal", "pid_file": "/home/akring/gekko_0/run/kill-node__normal__rep10/server.pid"}
+{"ts": "2026-09-03T15:10:02.446388+00:00", "pid": 260077, "event": "work_started", "seconds": 6.0, "label": "scenario"}
+{"ts": "2026-09-03T15:10:08.446807+00:00", "pid": 260077, "event": "work_finished", "seconds": 6.0, "label": "scenario"}
+{"ts": "2026-09-03T15:10:10.464240+00:00", "pid": 260077, "event": "signal_received", "signal": "SIGTERM", "signum": 15}
+{"ts": "2026-09-03T15:10:10.465374+00:00", "pid": 260077, "event": "system_exit", "code": 143}
+{"ts": "2026-09-03T15:10:10.465561+00:00", "pid": 260077, "event": "process_exiting"}

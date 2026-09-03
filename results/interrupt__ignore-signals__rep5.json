@@ -1,0 +1,98 @@
+{
+  "trigger": "interrupt",
+  "behavior": "ignore-signals",
+  "triggerAt": "2026-09-03T14:48:07.470Z",
+  "finishedAt": "2026-09-03T14:48:08.473Z",
+  "server": {
+    "pid": 242095,
+    "samples": [
+      {
+        "atMs": 0,
+        "alive": true
+      },
+      {
+        "atMs": 201,
+        "alive": true
+      },
+      {
+        "atMs": 401,
+        "alive": true
+      },
+      {
+        "atMs": 602,
+        "alive": true
+      },
+      {
+        "atMs": 802,
+        "alive": true
+      },
+      {
+        "atMs": 1003,
+        "alive": false
+      }
+    ],
+    "diedAtMs": 1003,
+    "aliveAtWindowEnd": false
+  },
+  "cli": {
+    "pid": 242044,
+    "samples": [
+      {
+        "atMs": 0,
+        "alive": false
+      }
+    ],
+    "diedAtMs": 0,
+    "aliveAtWindowEnd": false
+  },
+  "serverEvents": [
+    {
+      "ts": "2026-09-03T14:47:58.385878+00:00",
+      "pid": 242095,
+      "event": "started",
+      "behavior": "ignore-signals",
+      "pid_file": "/home/akring/gekko_0/run/interrupt__ignore-signals__rep5/server.pid"
+    },
+    {
+      "ts": "2026-09-03T14:48:02.348170+00:00",
+      "pid": 242095,
+      "event": "work_started",
+      "seconds": 6,
+      "label": "scenario"
+    },
+    {
+      "ts": "2026-09-03T14:48:02.603809+00:00",
+      "pid": 242095,
+      "event": "signal_ignored",
+      "signal": "SIGINT",
+      "signum": 2
+    },
+    {
+      "ts": "2026-09-03T14:48:02.604020+00:00",
+      "pid": 242095,
+      "event": "signal_ignored",
+      "signal": "SIGTERM",
+      "signum": 15
+    },
+    {
+      "ts": "2026-09-03T14:48:08.348530+00:00",
+      "pid": 242095,
+      "event": "work_finished",
+      "seconds": 6,
+      "label": "scenario"
+    },
+    {
+      "ts": "2026-09-03T14:48:08.350756+00:00",
+      "pid": 242095,
+      "event": "exception",
+      "type": "ExceptionGroup",
+      "message": "unhandled errors in a TaskGroup (1 sub-exception)"
+    },
+    {
+      "ts": "2026-09-03T14:48:08.351077+00:00",
+      "pid": 242095,
+      "event": "process_exiting"
+    }
+  ],
+  "notes": []
+}

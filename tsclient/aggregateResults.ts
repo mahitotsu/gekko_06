@@ -53,15 +53,23 @@ function main() {
   const summary: Array<{
     trigger: Trigger;
     behavior: ServerBehavior;
-    server: Stats;
+    server: Stats | null;
     cli: Stats | null;
   }> = [];
 
   for (const [key, results] of [...groups.entries()].sort()) {
     const [trigger, behavior] = key.split("__") as [Trigger, ServerBehavior];
-    const serverDied = results.map((r) => r.server.diedAtMs).filter((v): v is number => v !== null);
-    const serverNeverDied = results.filter((r) => r.server.diedAtMs === null).length;
-    const serverStats = computeStats(serverDied, serverNeverDied);
+
+    // server.pidがnullなのは、SERVER_READY_TIMEOUT_MS以内にPIDファイルを検出できなかった
+    // 実行のみ(サーバー自体は起動していても検出が間に合わなかっただけの場合を含む)。
+    // 生死追跡自体が成立していないので、cliと同様にサンプルから除外する。
+    const serverFound = results.filter((r) => r.server.pid !== null);
+    const serverDied = serverFound.map((r) => r.server.diedAtMs).filter((v): v is number => v !== null);
+    const serverNeverDied = serverFound.filter((r) => r.server.diedAtMs === null).length;
+    const serverStats: Stats | null = serverFound.length > 0 ? computeStats(serverDied, serverNeverDied) : null;
+    if (serverFound.length < results.length) {
+      console.log(`  note: ${trigger}×${behavior} — サーバーPID未特定のため${results.length - serverFound.length}件をserver統計から除外`);
+    }
 
     // cli.pidがnullなのは、work_started時点でCLI候補が1つに定まらなかった実行のみ。
     // そうした回はサンプルから除外する(死んだとも生きているとも言えないため)。
@@ -77,7 +85,9 @@ function main() {
   }
 
   const rows = summary.map((s) => {
-    const serverCell = `n=${s.server.n} 平均${fmt(s.server.mean)} 中央値${fmt(s.server.median)} (${fmt(s.server.min)}〜${fmt(s.server.max)}) σ=${fmt(s.server.stddev)}${s.server.neverDiedCount ? ` ⚠️生存${s.server.neverDiedCount}件` : ""}`;
+    const serverCell = s.server
+      ? `n=${s.server.n} 平均${fmt(s.server.mean)} 中央値${fmt(s.server.median)} (${fmt(s.server.min)}〜${fmt(s.server.max)}) σ=${fmt(s.server.stddev)}${s.server.neverDiedCount ? ` ⚠️生存${s.server.neverDiedCount}件` : ""}`
+      : "n/a";
     const cliCell = s.cli
       ? `n=${s.cli.n} 平均${fmt(s.cli.mean)} 中央値${fmt(s.cli.median)} (${fmt(s.cli.min)}〜${fmt(s.cli.max)}) σ=${fmt(s.cli.stddev)}${s.cli.neverDiedCount ? ` ⚠️生存${s.cli.neverDiedCount}件` : ""}`
       : "n/a";

@@ -1,0 +1,5 @@
+{"ts": "2026-09-03T14:57:18.526319+00:00", "pid": 249681, "event": "started", "behavior": "normal", "pid_file": "/home/akring/gekko_0/run/kill-cli__normal__rep7/server.pid"}
+{"ts": "2026-09-03T14:57:23.841425+00:00", "pid": 249681, "event": "work_started", "seconds": 6.0, "label": "scenario"}
+{"ts": "2026-09-03T14:57:29.841983+00:00", "pid": 249681, "event": "work_finished", "seconds": 6.0, "label": "scenario"}
+{"ts": "2026-09-03T14:57:29.844579+00:00", "pid": 249681, "event": "exception", "type": "ExceptionGroup", "message": "unhandled errors in a TaskGroup (1 sub-exception)"}
+{"ts": "2026-09-03T14:57:29.844676+00:00", "pid": 249681, "event": "process_exiting"}

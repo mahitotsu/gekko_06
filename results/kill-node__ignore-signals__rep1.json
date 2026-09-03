@@ -1,0 +1,424 @@
+{
+  "trigger": "kill-node",
+  "behavior": "ignore-signals",
+  "triggerAt": "2026-09-03T14:21:22.181Z",
+  "finishedAt": "2026-09-03T14:21:31.384Z",
+  "server": {
+    "pid": 232492,
+    "samples": [
+      {
+        "atMs": 1,
+        "alive": true
+      },
+      {
+        "atMs": 205,
+        "alive": true
+      },
+      {
+        "atMs": 407,
+        "alive": true
+      },
+      {
+        "atMs": 609,
+        "alive": true
+      },
+      {
+        "atMs": 812,
+        "alive": true
+      },
+      {
+        "atMs": 1013,
+        "alive": true
+      },
+      {
+        "atMs": 1221,
+        "alive": true
+      },
+      {
+        "atMs": 1423,
+        "alive": true
+      },
+      {
+        "atMs": 1627,
+        "alive": true
+      },
+      {
+        "atMs": 1842,
+        "alive": true
+      },
+      {
+        "atMs": 2045,
+        "alive": true
+      },
+      {
+        "atMs": 2258,
+        "alive": true
+      },
+      {
+        "atMs": 2463,
+        "alive": true
+      },
+      {
+        "atMs": 2664,
+        "alive": true
+      },
+      {
+        "atMs": 2872,
+        "alive": true
+      },
+      {
+        "atMs": 3078,
+        "alive": true
+      },
+      {
+        "atMs": 3284,
+        "alive": true
+      },
+      {
+        "atMs": 3490,
+        "alive": true
+      },
+      {
+        "atMs": 3692,
+        "alive": true
+      },
+      {
+        "atMs": 3895,
+        "alive": true
+      },
+      {
+        "atMs": 4104,
+        "alive": true
+      },
+      {
+        "atMs": 4304,
+        "alive": true
+      },
+      {
+        "atMs": 4507,
+        "alive": true
+      },
+      {
+        "atMs": 4710,
+        "alive": true
+      },
+      {
+        "atMs": 4912,
+        "alive": true
+      },
+      {
+        "atMs": 5114,
+        "alive": true
+      },
+      {
+        "atMs": 5315,
+        "alive": true
+      },
+      {
+        "atMs": 5517,
+        "alive": true
+      },
+      {
+        "atMs": 5724,
+        "alive": true
+      },
+      {
+        "atMs": 5933,
+        "alive": true
+      },
+      {
+        "atMs": 6139,
+        "alive": true
+      },
+      {
+        "atMs": 6341,
+        "alive": true
+      },
+      {
+        "atMs": 6551,
+        "alive": true
+      },
+      {
+        "atMs": 6757,
+        "alive": true
+      },
+      {
+        "atMs": 6957,
+        "alive": true
+      },
+      {
+        "atMs": 7159,
+        "alive": true
+      },
+      {
+        "atMs": 7363,
+        "alive": true
+      },
+      {
+        "atMs": 7572,
+        "alive": true
+      },
+      {
+        "atMs": 7779,
+        "alive": true
+      },
+      {
+        "atMs": 7981,
+        "alive": true
+      },
+      {
+        "atMs": 8184,
+        "alive": true
+      },
+      {
+        "atMs": 8389,
+        "alive": true
+      },
+      {
+        "atMs": 8590,
+        "alive": false
+      }
+    ],
+    "diedAtMs": 8590,
+    "aliveAtWindowEnd": false
+  },
+  "cli": {
+    "pid": 232440,
+    "samples": [
+      {
+        "atMs": 1,
+        "alive": true
+      },
+      {
+        "atMs": 205,
+        "alive": true
+      },
+      {
+        "atMs": 407,
+        "alive": true
+      },
+      {
+        "atMs": 609,
+        "alive": true
+      },
+      {
+        "atMs": 812,
+        "alive": true
+      },
+      {
+        "atMs": 1013,
+        "alive": true
+      },
+      {
+        "atMs": 1222,
+        "alive": true
+      },
+      {
+        "atMs": 1423,
+        "alive": true
+      },
+      {
+        "atMs": 1627,
+        "alive": true
+      },
+      {
+        "atMs": 1842,
+        "alive": true
+      },
+      {
+        "atMs": 2045,
+        "alive": true
+      },
+      {
+        "atMs": 2258,
+        "alive": true
+      },
+      {
+        "atMs": 2463,
+        "alive": true
+      },
+      {
+        "atMs": 2664,
+        "alive": true
+      },
+      {
+        "atMs": 2872,
+        "alive": true
+      },
+      {
+        "atMs": 3078,
+        "alive": true
+      },
+      {
+        "atMs": 3284,
+        "alive": true
+      },
+      {
+        "atMs": 3490,
+        "alive": true
+      },
+      {
+        "atMs": 3692,
+        "alive": true
+      },
+      {
+        "atMs": 3895,
+        "alive": true
+      },
+      {
+        "atMs": 4104,
+        "alive": true
+      },
+      {
+        "atMs": 4304,
+        "alive": true
+      },
+      {
+        "atMs": 4507,
+        "alive": true
+      },
+      {
+        "atMs": 4710,
+        "alive": true
+      },
+      {
+        "atMs": 4912,
+        "alive": true
+      },
+      {
+        "atMs": 5114,
+        "alive": true
+      },
+      {
+        "atMs": 5315,
+        "alive": true
+      },
+      {
+        "atMs": 5517,
+        "alive": true
+      },
+      {
+        "atMs": 5724,
+        "alive": true
+      },
+      {
+        "atMs": 5933,
+        "alive": true
+      },
+      {
+        "atMs": 6139,
+        "alive": true
+      },
+      {
+        "atMs": 6341,
+        "alive": true
+      },
+      {
+        "atMs": 6551,
+        "alive": true
+      },
+      {
+        "atMs": 6757,
+        "alive": true
+      },
+      {
+        "atMs": 6958,
+        "alive": true
+      },
+      {
+        "atMs": 7159,
+        "alive": true
+      },
+      {
+        "atMs": 7363,
+        "alive": true
+      },
+      {
+        "atMs": 7572,
+        "alive": true
+      },
+      {
+        "atMs": 7779,
+        "alive": true
+      },
+      {
+        "atMs": 7981,
+        "alive": true
+      },
+      {
+        "atMs": 8184,
+        "alive": true
+      },
+      {
+        "atMs": 8389,
+        "alive": true
+      },
+      {
+        "atMs": 8591,
+        "alive": true
+      },
+      {
+        "atMs": 8800,
+        "alive": true
+      },
+      {
+        "atMs": 9001,
+        "alive": true
+      },
+      {
+        "atMs": 9202,
+        "alive": false
+      }
+    ],
+    "diedAtMs": 9202,
+    "aliveAtWindowEnd": false
+  },
+  "serverEvents": [
+    {
+      "ts": "2026-09-03T14:21:17.802413+00:00",
+      "pid": 232492,
+      "event": "started",
+      "behavior": "ignore-signals",
+      "pid_file": "/home/akring/gekko_0/run/kill-node__ignore-signals__rep1/server.pid"
+    },
+    {
+      "ts": "2026-09-03T14:21:22.124100+00:00",
+      "pid": 232492,
+      "event": "work_started",
+      "seconds": 6,
+      "label": "scenario"
+    },
+    {
+      "ts": "2026-09-03T14:21:28.125129+00:00",
+      "pid": 232492,
+      "event": "work_finished",
+      "seconds": 6,
+      "label": "scenario"
+    },
+    {
+      "ts": "2026-09-03T14:21:30.329602+00:00",
+      "pid": 232492,
+      "event": "signal_ignored",
+      "signal": "SIGINT",
+      "signum": 2
+    },
+    {
+      "ts": "2026-09-03T14:21:30.329984+00:00",
+      "pid": 232492,
+      "event": "signal_ignored",
+      "signal": "SIGTERM",
+      "signum": 15
+    },
+    {
+      "ts": "2026-09-03T14:21:30.634266+00:00",
+      "pid": 232492,
+      "event": "run_returned_naturally"
+    },
+    {
+      "ts": "2026-09-03T14:21:30.634890+00:00",
+      "pid": 232492,
+      "event": "process_exiting"
+    }
+  ],
+  "notes": []
+}

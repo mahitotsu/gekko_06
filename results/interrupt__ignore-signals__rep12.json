@@ -1,0 +1,102 @@
+{
+  "trigger": "interrupt",
+  "behavior": "ignore-signals",
+  "triggerAt": "2026-09-03T15:16:02.915Z",
+  "finishedAt": "2026-09-03T15:16:04.119Z",
+  "server": {
+    "pid": 264847,
+    "samples": [
+      {
+        "atMs": 1,
+        "alive": true
+      },
+      {
+        "atMs": 201,
+        "alive": true
+      },
+      {
+        "atMs": 402,
+        "alive": true
+      },
+      {
+        "atMs": 602,
+        "alive": true
+      },
+      {
+        "atMs": 803,
+        "alive": true
+      },
+      {
+        "atMs": 1003,
+        "alive": true
+      },
+      {
+        "atMs": 1204,
+        "alive": false
+      }
+    ],
+    "diedAtMs": 1204,
+    "aliveAtWindowEnd": false
+  },
+  "cli": {
+    "pid": 264797,
+    "samples": [
+      {
+        "atMs": 1,
+        "alive": false
+      }
+    ],
+    "diedAtMs": 1,
+    "aliveAtWindowEnd": false
+  },
+  "serverEvents": [
+    {
+      "ts": "2026-09-03T15:15:54.052531+00:00",
+      "pid": 264847,
+      "event": "started",
+      "behavior": "ignore-signals",
+      "pid_file": "/home/akring/gekko_0/run/interrupt__ignore-signals__rep12/server.pid"
+    },
+    {
+      "ts": "2026-09-03T15:15:57.807070+00:00",
+      "pid": 264847,
+      "event": "work_started",
+      "seconds": 6,
+      "label": "scenario"
+    },
+    {
+      "ts": "2026-09-03T15:15:58.059160+00:00",
+      "pid": 264847,
+      "event": "signal_ignored",
+      "signal": "SIGINT",
+      "signum": 2
+    },
+    {
+      "ts": "2026-09-03T15:15:58.059359+00:00",
+      "pid": 264847,
+      "event": "signal_ignored",
+      "signal": "SIGTERM",
+      "signum": 15
+    },
+    {
+      "ts": "2026-09-03T15:16:03.807408+00:00",
+      "pid": 264847,
+      "event": "work_finished",
+      "seconds": 6,
+      "label": "scenario"
+    },
+    {
+      "ts": "2026-09-03T15:16:03.810554+00:00",
+      "pid": 264847,
+      "event": "exception",
+      "type": "ExceptionGroup",
+      "message": "unhandled errors in a TaskGroup (1 sub-exception)"
+    },
+    {
+      "ts": "2026-09-03T15:16:03.810735+00:00",
+      "pid": 264847,
+      "event": "process_exiting"
+    }
+  ],
+  "notes": []
+}

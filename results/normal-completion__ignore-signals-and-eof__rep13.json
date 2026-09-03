@@ -1,0 +1,119 @@
+{
+  "trigger": "normal-completion",
+  "behavior": "ignore-signals-and-eof",
+  "triggerAt": "2026-09-03T15:19:43.938Z",
+  "finishedAt": "2026-09-03T15:19:44.539Z",
+  "server": {
+    "pid": 267676,
+    "samples": [
+      {
+        "atMs": 0,
+        "alive": true
+      },
+      {
+        "atMs": 200,
+        "alive": true
+      },
+      {
+        "atMs": 400,
+        "alive": true
+      },
+      {
+        "atMs": 600,
+        "alive": false
+      }
+    ],
+    "diedAtMs": 600,
+    "aliveAtWindowEnd": false
+  },
+  "cli": {
+    "pid": 267615,
+    "samples": [
+      {
+        "atMs": 0,
+        "alive": false
+      }
+    ],
+    "diedAtMs": 0,
+    "aliveAtWindowEnd": false
+  },
+  "serverEvents": [
+    {
+      "ts": "2026-09-03T15:19:27.999718+00:00",
+      "pid": 267676,
+      "event": "started",
+      "behavior": "ignore-signals-and-eof",
+      "pid_file": "/home/akring/gekko_0/run/normal-completion__ignore-signals-and-eof__rep13/server.pid"
+    },
+    {
+      "ts": "2026-09-03T15:19:31.418135+00:00",
+      "pid": 267676,
+      "event": "work_started",
+      "seconds": 6,
+      "label": "scenario"
+    },
+    {
+      "ts": "2026-09-03T15:19:37.418532+00:00",
+      "pid": 267676,
+      "event": "work_finished",
+      "seconds": 6,
+      "label": "scenario"
+    },
+    {
+      "ts": "2026-09-03T15:19:39.122311+00:00",
+      "pid": 267676,
+      "event": "signal_ignored",
+      "signal": "SIGINT",
+      "signum": 2
+    },
+    {
+      "ts": "2026-09-03T15:19:39.123001+00:00",
+      "pid": 267676,
+      "event": "signal_ignored",
+      "signal": "SIGTERM",
+      "signum": 15
+    },
+    {
+      "ts": "2026-09-03T15:19:39.425727+00:00",
+      "pid": 267676,
+      "event": "run_returned_but_staying_alive",
+      "loop": 1
+    },
+    {
+      "ts": "2026-09-03T15:19:40.426751+00:00",
+      "pid": 267676,
+      "event": "exception_suppressed",
+      "type": "ValueError",
+      "loop": 2
+    },
+    {
+      "ts": "2026-09-03T15:19:41.427386+00:00",
+      "pid": 267676,
+      "event": "exception_suppressed",
+      "type": "ValueError",
+      "loop": 3
+    },
+    {
+      "ts": "2026-09-03T15:19:42.428111+00:00",
+      "pid": 267676,
+      "event": "exception_suppressed",
+      "type": "ValueError",
+      "loop": 4
+    },
+    {
+      "ts": "2026-09-03T15:19:43.428742+00:00",
+      "pid": 267676,
+      "event": "exception_suppressed",
+      "type": "ValueError",
+      "loop": 5
+    },
+    {
+      "ts": "2026-09-03T15:19:44.429548+00:00",
+      "pid": 267676,
+      "event": "exception_suppressed",
+      "type": "ValueError",
+      "loop": 6
+    }
+  ],
+  "notes": []
+}

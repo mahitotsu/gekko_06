@@ -1,0 +1,11 @@
+{"ts": "2026-09-03T14:45:01.283908+00:00", "pid": 239825, "event": "started", "behavior": "ignore-signals-and-eof", "pid_file": "/home/akring/gekko_0/run/subagent__ignore-signals-and-eof__rep4/server.pid"}
+{"ts": "2026-09-03T14:45:06.021224+00:00", "pid": 239825, "event": "work_started", "seconds": 6.0, "label": "scenario"}
+{"ts": "2026-09-03T14:45:12.021574+00:00", "pid": 239825, "event": "work_finished", "seconds": 6.0, "label": "scenario"}
+{"ts": "2026-09-03T14:45:15.095722+00:00", "pid": 239825, "event": "signal_ignored", "signal": "SIGINT", "signum": 2}
+{"ts": "2026-09-03T14:45:15.095949+00:00", "pid": 239825, "event": "signal_ignored", "signal": "SIGTERM", "signum": 15}
+{"ts": "2026-09-03T14:45:15.396206+00:00", "pid": 239825, "event": "run_returned_but_staying_alive", "loop": 1}
+{"ts": "2026-09-03T14:45:16.397100+00:00", "pid": 239825, "event": "exception_suppressed", "type": "ValueError", "loop": 2}
+{"ts": "2026-09-03T14:45:17.397783+00:00", "pid": 239825, "event": "exception_suppressed", "type": "ValueError", "loop": 3}
+{"ts": "2026-09-03T14:45:18.398417+00:00", "pid": 239825, "event": "exception_suppressed", "type": "ValueError", "loop": 4}
+{"ts": "2026-09-03T14:45:19.399283+00:00", "pid": 239825, "event": "exception_suppressed", "type": "ValueError", "loop": 5}
+{"ts": "2026-09-03T14:45:20.399989+00:00", "pid": 239825, "event": "exception_suppressed", "type": "ValueError", "loop": 6}

@@ -1,0 +1,187 @@
+{
+  "trigger": "kill-cli",
+  "behavior": "ignore-signals-and-eof",
+  "triggerAt": "2026-09-03T15:17:53.470Z",
+  "finishedAt": "2026-09-03T15:17:59.680Z",
+  "server": {
+    "pid": 266382,
+    "samples": [
+      {
+        "atMs": 0,
+        "alive": true
+      },
+      {
+        "atMs": 200,
+        "alive": true
+      },
+      {
+        "atMs": 399,
+        "alive": true
+      },
+      {
+        "atMs": 600,
+        "alive": true
+      },
+      {
+        "atMs": 800,
+        "alive": true
+      },
+      {
+        "atMs": 1001,
+        "alive": true
+      },
+      {
+        "atMs": 1201,
+        "alive": true
+      },
+      {
+        "atMs": 1401,
+        "alive": true
+      },
+      {
+        "atMs": 1602,
+        "alive": true
+      },
+      {
+        "atMs": 1802,
+        "alive": true
+      },
+      {
+        "atMs": 2003,
+        "alive": true
+      },
+      {
+        "atMs": 2203,
+        "alive": true
+      },
+      {
+        "atMs": 2403,
+        "alive": true
+      },
+      {
+        "atMs": 2604,
+        "alive": true
+      },
+      {
+        "atMs": 2804,
+        "alive": true
+      },
+      {
+        "atMs": 3005,
+        "alive": true
+      },
+      {
+        "atMs": 3205,
+        "alive": true
+      },
+      {
+        "atMs": 3405,
+        "alive": true
+      },
+      {
+        "atMs": 3605,
+        "alive": true
+      },
+      {
+        "atMs": 3806,
+        "alive": true
+      },
+      {
+        "atMs": 4006,
+        "alive": true
+      },
+      {
+        "atMs": 4206,
+        "alive": true
+      },
+      {
+        "atMs": 4407,
+        "alive": true
+      },
+      {
+        "atMs": 4607,
+        "alive": true
+      },
+      {
+        "atMs": 4808,
+        "alive": true
+      },
+      {
+        "atMs": 5008,
+        "alive": true
+      },
+      {
+        "atMs": 5208,
+        "alive": true
+      },
+      {
+        "atMs": 5409,
+        "alive": true
+      },
+      {
+        "atMs": 5609,
+        "alive": true
+      },
+      {
+        "atMs": 5809,
+        "alive": true
+      },
+      {
+        "atMs": 6010,
+        "alive": true
+      },
+      {
+        "atMs": 6210,
+        "alive": false
+      }
+    ],
+    "diedAtMs": 6210,
+    "aliveAtWindowEnd": false
+  },
+  "cli": {
+    "pid": 266332,
+    "samples": [
+      {
+        "atMs": 0,
+        "alive": true
+      },
+      {
+        "atMs": 201,
+        "alive": false
+      }
+    ],
+    "diedAtMs": 201,
+    "aliveAtWindowEnd": false
+  },
+  "serverEvents": [
+    {
+      "ts": "2026-09-03T15:17:49.792285+00:00",
+      "pid": 266382,
+      "event": "started",
+      "behavior": "ignore-signals-and-eof",
+      "pid_file": "/home/akring/gekko_0/run/kill-cli__ignore-signals-and-eof__rep12/server.pid"
+    },
+    {
+      "ts": "2026-09-03T15:17:53.418943+00:00",
+      "pid": 266382,
+      "event": "work_started",
+      "seconds": 6,
+      "label": "scenario"
+    },
+    {
+      "ts": "2026-09-03T15:17:59.419173+00:00",
+      "pid": 266382,
+      "event": "work_finished",
+      "seconds": 6,
+      "label": "scenario"
+    },
+    {
+      "ts": "2026-09-03T15:17:59.422010+00:00",
+      "pid": 266382,
+      "event": "exception_suppressed",
+      "type": "ExceptionGroup",
+      "loop": 1
+    }
+  ],
+  "notes": []
+}

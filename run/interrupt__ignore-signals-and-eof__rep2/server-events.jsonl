@@ -1,0 +1,5 @@
+{"ts": "2026-09-03T14:23:16.880825+00:00", "pid": 233633, "event": "started", "behavior": "ignore-signals-and-eof", "pid_file": "/home/akring/gekko_0/run/interrupt__ignore-signals-and-eof__rep2/server.pid"}
+{"ts": "2026-09-03T14:23:21.147040+00:00", "pid": 233633, "event": "work_started", "seconds": 6.0, "label": "scenario"}
+{"ts": "2026-09-03T14:23:27.174480+00:00", "pid": 233633, "event": "signal_ignored", "signal": "SIGINT", "signum": 2}
+{"ts": "2026-09-03T14:23:27.174693+00:00", "pid": 233633, "event": "signal_ignored", "signal": "SIGTERM", "signum": 15}
+{"ts": "2026-09-03T14:23:27.177696+00:00", "pid": 233633, "event": "exception_suppressed", "type": "ExceptionGroup", "loop": 1}

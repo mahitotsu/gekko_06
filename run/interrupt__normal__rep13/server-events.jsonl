@@ -1,0 +1,6 @@
+{"ts": "2026-09-03T15:19:46.995617+00:00", "pid": 267953, "event": "started", "behavior": "normal", "pid_file": "/home/akring/gekko_0/run/interrupt__normal__rep13/server.pid"}
+{"ts": "2026-09-03T15:19:51.070864+00:00", "pid": 267953, "event": "work_started", "seconds": 6.0, "label": "scenario"}
+{"ts": "2026-09-03T15:19:51.297351+00:00", "pid": 267953, "event": "signal_received", "signal": "SIGINT", "signum": 2}
+{"ts": "2026-09-03T15:19:51.297781+00:00", "pid": 267953, "event": "signal_received", "signal": "SIGTERM", "signum": 15}
+{"ts": "2026-09-03T15:19:52.370046+00:00", "pid": 267953, "event": "system_exit", "code": 130}
+{"ts": "2026-09-03T15:19:52.370198+00:00", "pid": 267953, "event": "process_exiting"}

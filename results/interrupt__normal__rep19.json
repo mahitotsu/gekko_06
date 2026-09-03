@@ -1,0 +1,91 @@
+{
+  "trigger": "interrupt",
+  "behavior": "normal",
+  "triggerAt": "2026-09-03T15:43:45.722Z",
+  "finishedAt": "2026-09-03T15:43:46.724Z",
+  "server": {
+    "pid": 287233,
+    "samples": [
+      {
+        "atMs": 0,
+        "alive": true
+      },
+      {
+        "atMs": 199,
+        "alive": true
+      },
+      {
+        "atMs": 400,
+        "alive": true
+      },
+      {
+        "atMs": 600,
+        "alive": true
+      },
+      {
+        "atMs": 801,
+        "alive": true
+      },
+      {
+        "atMs": 1001,
+        "alive": false
+      }
+    ],
+    "diedAtMs": 1001,
+    "aliveAtWindowEnd": false
+  },
+  "cli": {
+    "pid": 287182,
+    "samples": [
+      {
+        "atMs": 0,
+        "alive": false
+      }
+    ],
+    "diedAtMs": 0,
+    "aliveAtWindowEnd": false
+  },
+  "serverEvents": [
+    {
+      "ts": "2026-09-03T15:43:35.713010+00:00",
+      "pid": 287233,
+      "event": "started",
+      "behavior": "normal",
+      "pid_file": "/home/akring/gekko_0/run/interrupt__normal__rep19/server.pid"
+    },
+    {
+      "ts": "2026-09-03T15:43:40.579932+00:00",
+      "pid": 287233,
+      "event": "work_started",
+      "seconds": 6,
+      "label": "scenario"
+    },
+    {
+      "ts": "2026-09-03T15:43:46.580522+00:00",
+      "pid": 287233,
+      "event": "signal_received",
+      "signal": "SIGINT",
+      "signum": 2
+    },
+    {
+      "ts": "2026-09-03T15:43:46.580827+00:00",
+      "pid": 287233,
+      "event": "signal_received",
+      "signal": "SIGTERM",
+      "signum": 15
+    },
+    {
+      "ts": "2026-09-03T15:43:46.585120+00:00",
+      "pid": 287233,
+      "event": "exception",
+      "type": "ExceptionGroup",
+      "message": "unhandled errors in a TaskGroup (1 sub-exception)"
+    },
+    {
+      "ts": "2026-09-03T15:43:46.585250+00:00",
+      "pid": 287233,
+      "event": "process_exiting"
+    }
+  ],
+  "notes": []
+}

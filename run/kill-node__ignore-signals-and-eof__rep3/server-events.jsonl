@@ -1,0 +1,11 @@
+{"ts": "2026-09-03T14:42:28.422380+00:00", "pid": 237990, "event": "started", "behavior": "ignore-signals-and-eof", "pid_file": "/home/akring/gekko_0/run/kill-node__ignore-signals-and-eof__rep3/server.pid"}
+{"ts": "2026-09-03T14:42:32.045104+00:00", "pid": 237990, "event": "work_started", "seconds": 6.0, "label": "scenario"}
+{"ts": "2026-09-03T14:42:38.045433+00:00", "pid": 237990, "event": "work_finished", "seconds": 6.0, "label": "scenario"}
+{"ts": "2026-09-03T14:42:39.459246+00:00", "pid": 237990, "event": "signal_ignored", "signal": "SIGINT", "signum": 2}
+{"ts": "2026-09-03T14:42:39.459450+00:00", "pid": 237990, "event": "signal_ignored", "signal": "SIGTERM", "signum": 15}
+{"ts": "2026-09-03T14:42:39.760025+00:00", "pid": 237990, "event": "run_returned_but_staying_alive", "loop": 1}
+{"ts": "2026-09-03T14:42:40.760977+00:00", "pid": 237990, "event": "exception_suppressed", "type": "ValueError", "loop": 2}
+{"ts": "2026-09-03T14:42:41.761653+00:00", "pid": 237990, "event": "exception_suppressed", "type": "ValueError", "loop": 3}
+{"ts": "2026-09-03T14:42:42.762393+00:00", "pid": 237990, "event": "exception_suppressed", "type": "ValueError", "loop": 4}
+{"ts": "2026-09-03T14:42:43.763346+00:00", "pid": 237990, "event": "exception_suppressed", "type": "ValueError", "loop": 5}
+{"ts": "2026-09-03T14:42:44.764060+00:00", "pid": 237990, "event": "exception_suppressed", "type": "ValueError", "loop": 6}

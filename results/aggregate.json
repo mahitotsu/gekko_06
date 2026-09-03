@@ -1,0 +1,332 @@
+[
+  {
+    "trigger": "interrupt",
+    "behavior": "ignore-signals",
+    "server": {
+      "n": 20,
+      "mean": 1085.7,
+      "median": 1014.5,
+      "min": 1002,
+      "max": 1204,
+      "stddev": 98.53991977606681,
+      "neverDiedCount": 0
+    },
+    "cli": {
+      "n": 20,
+      "mean": 0.25,
+      "median": 0,
+      "min": 0,
+      "max": 1,
+      "stddev": 0.4442616583193193,
+      "neverDiedCount": 0
+    }
+  },
+  {
+    "trigger": "interrupt",
+    "behavior": "ignore-signals-and-eof",
+    "server": {
+      "n": 20,
+      "mean": 1075.1,
+      "median": 1003,
+      "min": 1002,
+      "max": 1204,
+      "stddev": 96.57497768982125,
+      "neverDiedCount": 0
+    },
+    "cli": {
+      "n": 20,
+      "mean": 0.1,
+      "median": 0,
+      "min": 0,
+      "max": 1,
+      "stddev": 0.30779350562554625,
+      "neverDiedCount": 0
+    }
+  },
+  {
+    "trigger": "interrupt",
+    "behavior": "normal",
+    "server": {
+      "n": 20,
+      "mean": 451.1,
+      "median": 1,
+      "min": 0,
+      "max": 1203,
+      "stddev": 570.0336001177104,
+      "neverDiedCount": 0
+    },
+    "cli": {
+      "n": 20,
+      "mean": 0.25,
+      "median": 0,
+      "min": 0,
+      "max": 1,
+      "stddev": 0.4442616583193193,
+      "neverDiedCount": 0
+    }
+  },
+  {
+    "trigger": "kill-cli",
+    "behavior": "ignore-signals",
+    "server": {
+      "n": 20,
+      "mean": 6286.85,
+      "median": 6215,
+      "min": 6190,
+      "max": 7679,
+      "stddev": 327.727145013878,
+      "neverDiedCount": 0
+    },
+    "cli": {
+      "n": 20,
+      "mean": 201.35,
+      "median": 201,
+      "min": 200,
+      "max": 203,
+      "stddev": 0.7451598203705945,
+      "neverDiedCount": 0
+    }
+  },
+  {
+    "trigger": "kill-cli",
+    "behavior": "ignore-signals-and-eof",
+    "server": {
+      "n": 20,
+      "mean": 6209.45,
+      "median": 6215,
+      "min": 6112,
+      "max": 6218,
+      "stddev": 23.002231013076685,
+      "neverDiedCount": 0
+    },
+    "cli": {
+      "n": 20,
+      "mean": 201.1,
+      "median": 201,
+      "min": 200,
+      "max": 205,
+      "stddev": 1.0208355710680803,
+      "neverDiedCount": 0
+    }
+  },
+  {
+    "trigger": "kill-cli",
+    "behavior": "normal",
+    "server": {
+      "n": 20,
+      "mean": 6286.2,
+      "median": 6215,
+      "min": 6173,
+      "max": 7687,
+      "stddev": 329.84822666126155,
+      "neverDiedCount": 0
+    },
+    "cli": {
+      "n": 20,
+      "mean": 201,
+      "median": 201,
+      "min": 200,
+      "max": 202,
+      "stddev": 0.6488856845230502,
+      "neverDiedCount": 0
+    }
+  },
+  {
+    "trigger": "kill-node",
+    "behavior": "ignore-signals",
+    "server": {
+      "n": 20,
+      "mean": 8257.15,
+      "median": 8217.5,
+      "min": 7813,
+      "max": 9224,
+      "stddev": 341.1326759951016,
+      "neverDiedCount": 0
+    },
+    "cli": {
+      "n": 20,
+      "mean": 8799.6,
+      "median": 8817,
+      "min": 8413,
+      "max": 9837,
+      "stddev": 345.25404833938853,
+      "neverDiedCount": 0
+    }
+  },
+  {
+    "trigger": "kill-node",
+    "behavior": "ignore-signals-and-eof",
+    "server": {
+      "n": 20,
+      "mean": 13417,
+      "median": 13230.5,
+      "min": 12827,
+      "max": 14698,
+      "stddev": 482.1643091858123,
+      "neverDiedCount": 0
+    },
+    "cli": {
+      "n": 20,
+      "mean": 12675,
+      "median": 12627,
+      "min": 12226,
+      "max": 13896,
+      "stddev": 452.5534571505861,
+      "neverDiedCount": 0
+    }
+  },
+  {
+    "trigger": "kill-node",
+    "behavior": "normal",
+    "server": {
+      "n": 20,
+      "mean": 8574.95,
+      "median": 8518,
+      "min": 8019,
+      "max": 9222,
+      "stddev": 298.30900175206875,
+      "neverDiedCount": 0
+    },
+    "cli": {
+      "n": 20,
+      "mean": 9107.35,
+      "median": 9058.5,
+      "min": 8621,
+      "max": 9623,
+      "stddev": 271.56123182733387,
+      "neverDiedCount": 0
+    }
+  },
+  {
+    "trigger": "normal-completion",
+    "behavior": "ignore-signals",
+    "server": {
+      "n": 20,
+      "mean": 0.2,
+      "median": 0,
+      "min": 0,
+      "max": 1,
+      "stddev": 0.4103913408340617,
+      "neverDiedCount": 0
+    },
+    "cli": {
+      "n": 20,
+      "mean": 0.3,
+      "median": 0,
+      "min": 0,
+      "max": 1,
+      "stddev": 0.47016234598162715,
+      "neverDiedCount": 0
+    }
+  },
+  {
+    "trigger": "normal-completion",
+    "behavior": "ignore-signals-and-eof",
+    "server": {
+      "n": 20,
+      "mean": 782.5,
+      "median": 802,
+      "min": 600,
+      "max": 1003,
+      "stddev": 88.3030070418419,
+      "neverDiedCount": 0
+    },
+    "cli": {
+      "n": 20,
+      "mean": 0.3,
+      "median": 0,
+      "min": 0,
+      "max": 1,
+      "stddev": 0.47016234598162715,
+      "neverDiedCount": 0
+    }
+  },
+  {
+    "trigger": "normal-completion",
+    "behavior": "normal",
+    "server": {
+      "n": 20,
+      "mean": 0.15,
+      "median": 0,
+      "min": 0,
+      "max": 1,
+      "stddev": 0.3663475485325232,
+      "neverDiedCount": 0
+    },
+    "cli": {
+      "n": 20,
+      "mean": 0.25,
+      "median": 0,
+      "min": 0,
+      "max": 1,
+      "stddev": 0.4442616583193193,
+      "neverDiedCount": 0
+    }
+  },
+  {
+    "trigger": "subagent",
+    "behavior": "ignore-signals",
+    "server": {
+      "n": 20,
+      "mean": 0.05,
+      "median": 0,
+      "min": 0,
+      "max": 1,
+      "stddev": 0.2236067977499789,
+      "neverDiedCount": 0
+    },
+    "cli": {
+      "n": 20,
+      "mean": 0.2,
+      "median": 0,
+      "min": 0,
+      "max": 1,
+      "stddev": 0.4103913408340617,
+      "neverDiedCount": 0
+    }
+  },
+  {
+    "trigger": "subagent",
+    "behavior": "ignore-signals-and-eof",
+    "server": {
+      "n": 20,
+      "mean": 803.7,
+      "median": 802,
+      "min": 801,
+      "max": 831,
+      "stddev": 6.522027453580911,
+      "neverDiedCount": 0
+    },
+    "cli": {
+      "n": 20,
+      "mean": 0.4,
+      "median": 0,
+      "min": 0,
+      "max": 1,
+      "stddev": 0.5026246899500346,
+      "neverDiedCount": 0
+    }
+  },
+  {
+    "trigger": "subagent",
+    "behavior": "normal",
+    "server": {
+      "n": 20,
+      "mean": 0.25,
+      "median": 0,
+      "min": 0,
+      "max": 1,
+      "stddev": 0.4442616583193193,
+      "neverDiedCount": 0
+    },
+    "cli": {
+      "n": 20,
+      "mean": 0.35,
+      "median": 0,
+      "min": 0,
+      "max": 1,
+      "stddev": 0.4893604849295929,
+      "neverDiedCount": 0
+    }
+  }
+]
